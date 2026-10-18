@@ -1,0 +1,47 @@
+{
+  "name": "melody",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Melody - local music player",
+  "type": "module",
+  "main": "./out/main/index.mjs",
+  "author": "melody",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "node scripts/dev/smoke.mjs --headless",
+    "smoke:gui": "node scripts/dev/smoke.mjs",
+    "fixtures": "node scripts/make-fixtures.mjs",
+    "dist": "electron-vite build && electron-builder",
+    "sandbox:build": "node --import ./scripts/dev/sandbox-exec-patch.mjs node_modules/electron-vite/bin/electron-vite.js build",
+    "sandbox:test": "node --import ./scripts/dev/sandbox-exec-patch.mjs node_modules/vitest/vitest.mjs run"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.14.21",
+    "lucide-react": "^1.59.0",
+    "music-metadata": "^12.2.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^6.0.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

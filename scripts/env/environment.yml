@@ -1,0 +1,6 @@
+name: melody
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  # 仅用于开发辅助脚本（fixture 校验、数据库巡检），应用本身不依赖 Python

@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme {
+  --color-bg: var(--color-bg);
+  --color-fg: var(--color-fg);
+  --color-accent: var(--color-accent);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family:
+    'Segoe UI',
+    'Microsoft YaHei',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
