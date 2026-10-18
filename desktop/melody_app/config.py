@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 
 APP_NAME = "Melody"
+APP_VERSION = "0.2.0"
+APP_TAGLINE = "本地音乐库"
 
 
 def app_data_dir() -> str:

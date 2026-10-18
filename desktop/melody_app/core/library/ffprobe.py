@@ -1,4 +1,4 @@
-"""ffprobe / ffmpeg 封装：读取标签、抽取内嵌封面。"""
+"""ffprobe / ffmpeg 封装：读取标签、抽取内嵌封面、转码 WAV。"""
 
 from __future__ import annotations
 
@@ -22,6 +22,15 @@ FFPROBE = _tool("ffprobe")
 FFMPEG = _tool("ffmpeg")
 
 
+def tool_status() -> dict:
+    """供设置页展示的工具状态。"""
+    return {
+        "ffprobe": FFPROBE,
+        "ffmpeg": FFMPEG,
+        "ok": bool(FFPROBE and FFMPEG),
+    }
+
+
 def _run(cmd: list[str], timeout: int = 30) -> subprocess.CompletedProcess:
     return subprocess.run(
         cmd,
@@ -42,6 +51,12 @@ def _int(value, default=None):
         return int(float(str(value)))
     except (TypeError, ValueError):
         return default
+
+
+def _track_number(raw: str | None) -> int | None:
+    if not raw:
+        return None
+    return _int(str(raw).split("/")[0])
 
 
 def probe(path: str) -> dict | None:
@@ -81,10 +96,8 @@ def probe(path: str) -> dict | None:
     tags = _tags_ci(audio_stream.get("tags"))
     tags = {**tags, **_tags_ci(fmt.get("tags"))}
 
-    track_raw = tags.get("track") or tags.get("tracknumber")
-    track_no = None
-    if track_raw:
-        track_no = _int(str(track_raw).split("/")[0])
+    track_no = _track_number(tags.get("track") or tags.get("tracknumber"))
+    disc_no = _track_number(tags.get("disc") or tags.get("discnumber"))
 
     year_raw = tags.get("date") or tags.get("year")
     year = None
@@ -105,6 +118,7 @@ def probe(path: str) -> dict | None:
         "genre": tags.get("genre"),
         "year": year,
         "track_no": track_no,
+        "disc_no": disc_no,
         "duration_ms": duration_ms,
         "bitrate": _int(fmt.get("bit_rate")),
         "sample_rate": _int(audio_stream.get("sample_rate")),
@@ -120,7 +134,10 @@ def extract_cover(path: str, output_path: str) -> bool:
         return False
     try:
         result = _run(
-            [FFMPEG, "-y", "-v", "error", "-i", path, "-an", "-map", "0:v:0", "-frames:v", "1", output_path]
+            [
+                FFMPEG, "-y", "-v", "error", "-i", path, "-an",
+                "-map", "0:v:0", "-frames:v", "1", output_path,
+            ]
         )
     except (subprocess.TimeoutExpired, OSError):
         return False
@@ -133,8 +150,10 @@ def transcode_to_wav(source: str, target: str) -> bool:
         return False
     try:
         result = _run(
-            [FFMPEG, "-y", "-v", "error", "-i", source, "-vn", "-ac", "2", "-ar", "44100",
-             "-acodec", "pcm_s16le", target],
+            [
+                FFMPEG, "-y", "-v", "error", "-i", source, "-vn",
+                "-ac", "2", "-ar", "44100", "-acodec", "pcm_s16le", target,
+            ],
             timeout=300,
         )
     except (subprocess.TimeoutExpired, OSError):

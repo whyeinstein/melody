@@ -1,4 +1,10 @@
-"""后台扫描：遍历目录 → ffprobe 解析 → 写入数据库 → 清理消失文件。"""
+"""后台扫描：遍历来源目录 → ffprobe 解析 → 写入数据库 → 清理消失文件。
+
+线程模型：
+- 扫描线程（本 QThread）持有**独立的 SQLite 连接**，避免与界面线程共用同一连接；
+- ffprobe 用 4 个线程并发，但子线程里**不访问数据库**（扫描前已把已有文件状态读进内存字典）；
+- 数据库写入只在扫描线程内串行执行。
+"""
 
 from __future__ import annotations
 
@@ -8,27 +14,30 @@ from concurrent.futures import ThreadPoolExecutor
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from ..config import covers_dir, is_audio_file
+from ...config import covers_dir, is_audio_file
+from ..db import Database
+from ..models import Source
+from ..repositories.songs import SongsRepo
 from . import ffprobe
-from .db import Database
 
 SKIPPED_DIRS = {"$recycle.bin", "system volume information", "node_modules", ".git"}
 
 
 class ScanWorker(QThread):
     progress = pyqtSignal(int, int, str)  # 已处理, 总数, 当前文件
-    finished_scan = pyqtSignal(dict)  # {"added", "updated", "removed", "failed"}
+    finished_scan = pyqtSignal(dict)  # {"added", "updated", "removed", "failed", "source_id"}
     failed = pyqtSignal(str)
 
-    def __init__(self, database: Database, folder_id: int, root: str) -> None:
+    def __init__(self, db_path: str, source: Source) -> None:
         super().__init__()
-        self._db = database
-        self._folder_id = folder_id
-        self._root = root
+        self._db_path = db_path
+        self._source = source
 
+    # ------------------------------------------------------------------ 遍历
     def _collect(self) -> list[str]:
+        root = str(self._source.path or "")
         files: list[str] = []
-        for current, dirs, names in os.walk(self._root):
+        for current, dirs, names in os.walk(root):
             dirs[:] = [
                 d for d in dirs if not d.startswith(".") and d.lower() not in SKIPPED_DIRS
             ]
@@ -38,25 +47,48 @@ class ScanWorker(QThread):
         return files
 
     def run(self) -> None:  # noqa: D401 - QThread 入口
+        if self._source.kind != "local":
+            self.failed.emit("远程库暂不支持扫描")
+            return
+        root = str(self._source.path or "")
+        if not os.path.isdir(root):
+            self.failed.emit(f"目录不存在：{root}")
+            return
         try:
             files = self._collect()
         except OSError as error:
             self.failed.emit(str(error))
             return
 
+        database = Database(self._db_path)
+        songs = SongsRepo(database)
+        try:
+            stats = self._scan_files(songs, files)
+        finally:
+            database.close()
+        self.finished_scan.emit(stats)
+
+    def _scan_files(self, songs: SongsRepo, files: list[str]) -> dict:
         total = len(files)
-        stats = {"added": 0, "updated": 0, "removed": 0, "failed": 0}
+        stats = {
+            "source_id": self._source.id,
+            "added": 0,
+            "updated": 0,
+            "removed": 0,
+            "failed": 0,
+        }
         seen: list[str] = []
         covers = covers_dir()
+        existing = songs.find_files_for_source(self._source.id)
 
         def process(path: str) -> dict | None:
             try:
                 stat = os.stat(path)
             except OSError:
                 return None
-            existing = self._db.find_song_file(path)
             mtime = int(stat.st_mtime * 1000)
-            if existing and existing[1] == stat.st_size and existing[2] == mtime:
+            known = existing.get(path.lower())
+            if known and known[1] == stat.st_size and known[2] == mtime:
                 return {"path": path, "unchanged": True}
             try:
                 info = ffprobe.probe(path)
@@ -75,7 +107,7 @@ class ScanWorker(QThread):
                 "path": path,
                 "size": stat.st_size,
                 "mtime_ms": mtime,
-                "folder_id": self._folder_id,
+                "source_id": self._source.id,
                 "title": title,
                 "artist": info.get("artist"),
                 "album": info.get("album"),
@@ -83,6 +115,7 @@ class ScanWorker(QThread):
                 "genre": info.get("genre"),
                 "year": info.get("year"),
                 "track_no": info.get("track_no"),
+                "disc_no": info.get("disc_no"),
                 "duration_ms": info.get("duration_ms"),
                 "bitrate": info.get("bitrate"),
                 "sample_rate": info.get("sample_rate"),
@@ -106,10 +139,11 @@ class ScanWorker(QThread):
                 if result.get("failed"):
                     stats["failed"] += 1
                     continue
-                is_new = self._db.find_song_file(result["path"]) is None
-                self._db.upsert_song(result)
+                is_new = result["path"].lower() not in existing
+                songs.upsert_scan(result)
                 stats["added" if is_new else "updated"] += 1
 
-        self._db.commit()
-        stats["removed"] = self._db.remove_missing(self._folder_id, seen)
-        self.finished_scan.emit(stats)
+        songs.commit()
+        stats["removed"] = songs.remove_missing_source_files(self._source.id, seen)
+        songs.commit()
+        return stats
