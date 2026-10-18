@@ -7,14 +7,13 @@ import shutil
 import subprocess
 import sys
 import unittest
+import uuid
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "desktop"))
 
 from melody_app.core.db import Database  # noqa: E402
-
-
-import shutil
-import uuid
+from melody_app.core.library.scanner import ScanWorker  # noqa: E402
+from melody_app.core.repositories import SongsRepo, SourcesRepo  # noqa: E402
 
 
 def make_temp_dir(prefix: str = "melody") -> str:
@@ -25,7 +24,6 @@ def make_temp_dir(prefix: str = "melody") -> str:
     os.makedirs(path, exist_ok=True)
     return path
 
-from melody_app.core.scanner import ScanWorker  # noqa: E402
 
 HAS_FFMPEG = shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
 
@@ -58,23 +56,31 @@ class ScannerTests(unittest.TestCase):
         self.data_dir = make_temp_dir("data")
         os.environ["MELODY_DATA_DIR"] = self.data_dir
         self.db = Database(os.path.join(self.data_dir, "test.db"))
+        self.songs = SongsRepo(self.db)
+        self.sources = SourcesRepo(self.db)
 
-        make_track(self.music_dir, "01 - 林深 - 晨雾.mp3", "libmp3lame",
-                   title="晨雾", artist="林深", album="雾气中的信号", track="1")
-        make_track(self.music_dir, "02 - Nova - Orbit.flac", "flac",
-                   title="Orbit", artist="Nova Sound", album="Orbital Drift", track="2")
-        make_track(self.music_dir, "03 - 夜航 - 灯塔.ogg", "libvorbis",
-                   title="灯塔", artist="夜航", album="夜航船", track="3")
+        make_track(
+            self.music_dir, "01 - 林深 - 晨雾.mp3", "libmp3lame",
+            title="晨雾", artist="林深", album="雾气中的信号", track="1",
+        )
+        make_track(
+            self.music_dir, "02 - Nova - Orbit.flac", "flac",
+            title="Orbit", artist="Nova Sound", album="Orbital Drift", track="2",
+        )
+        make_track(
+            self.music_dir, "03 - 夜航 - 灯塔.ogg", "libvorbis",
+            title="灯塔", artist="夜航", album="夜航船", track="3",
+        )
 
     def tearDown(self) -> None:
-        self.db.conn.close()
+        self.db.close()
         shutil.rmtree(self.music_dir, ignore_errors=True)
         shutil.rmtree(self.data_dir, ignore_errors=True)
         os.environ.pop("MELODY_DATA_DIR", None)
 
     def _scan(self) -> dict:
-        folder_id = self.db.add_folder(self.music_dir)
-        worker = ScanWorker(self.db, folder_id, self.music_dir)
+        source = self.sources.add_local(self.music_dir)
+        worker = ScanWorker(self.db.path, source)
         results: list[dict] = []
         worker.finished_scan.connect(results.append)
         worker.run()  # 直接同步执行，不依赖 Qt 事件循环
@@ -85,7 +91,7 @@ class ScannerTests(unittest.TestCase):
         self.assertEqual(stats["added"], 3)
         self.assertEqual(stats["failed"], 0)
 
-        songs = {song.title: song for song in self.db.list_songs()}
+        songs = {song.title: song for song in self.songs.query()}
         self.assertIn("晨雾", songs)
         self.assertIn("Orbit", songs)
         self.assertIn("灯塔", songs)
@@ -98,14 +104,14 @@ class ScannerTests(unittest.TestCase):
         stats = self._scan()
         self.assertEqual(stats["added"], 0)
         self.assertEqual(stats["updated"], 0)
-        self.assertEqual(self.db.song_count(), 3)
+        self.assertEqual(self.songs.count(), 3)
 
     def test_removed_file_is_pruned(self) -> None:
         self._scan()
         os.remove(os.path.join(self.music_dir, "01 - 林深 - 晨雾.mp3"))
         stats = self._scan()
         self.assertEqual(stats["removed"], 1)
-        self.assertEqual(self.db.song_count(), 2)
+        self.assertEqual(self.songs.count(), 2)
 
 
 if __name__ == "__main__":
