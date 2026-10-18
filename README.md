@@ -23,6 +23,10 @@ npm install        # 依赖与 Electron 运行时都缓存在项目内的 .cache
 npm run dev        # 启动开发模式
 ```
 
+> **必须在普通 Windows 终端里启动**（开始菜单的 cmd / Windows Terminal / 资源管理器双击 `dev.cmd`）。
+> 由 IDE、DSH 或其他代理环境派生的终端通常带有 `ELECTRON_RUN_AS_NODE=1`，且禁止 Chromium 需要的命名管道，
+> 会让 `electron.exe` 启动即退出且没有任何报错。最简单的办法是双击项目根目录的 `dev.cmd`。
+
 | 命令 | 作用 |
 | --- | --- |
 | `npm run dev` | 开发模式（Vite HMR + Electron） |

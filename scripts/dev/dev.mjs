@@ -19,7 +19,11 @@ const env = { ...process.env }
 delete env.ELECTRON_RUN_AS_NODE
 
 if (process.env['ELECTRON_RUN_AS_NODE'] !== undefined) {
-  console.log('[melody] 已移除继承自环境的 ELECTRON_RUN_AS_NODE，避免 Electron 退化成 Node 进程')
+  console.log(
+    '[melody] 警告：当前终端带有 ELECTRON_RUN_AS_NODE，说明它很可能由代理/IDE 环境派生。' +
+      '已移除该变量，但这类环境通常还禁止 Chromium 需要的命名管道，窗口仍可能起不来。' +
+      '建议改用开始菜单里的普通终端，或在资源管理器里双击项目根目录的 dev.cmd。'
+  )
 }
 if (env['NO_SANDBOX'] === '1') {
   console.log('[melody] NO_SANDBOX=1：本次以 --no-sandbox 启动（仅用于受限环境排查）')
