@@ -1,12 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
-@theme {
-  --color-bg: var(--color-bg);
-  --color-fg: var(--color-fg);
-  --color-accent: var(--color-accent);
-}
-
 html,
 body,
 #root {
@@ -15,6 +9,7 @@ body,
 
 body {
   margin: 0;
+  overflow: hidden;
   background: var(--color-bg);
   color: var(--color-fg);
   font-family:
@@ -28,6 +23,15 @@ body {
   user-select: none;
 }
 
+input,
+textarea {
+  user-select: text;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+}
+
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -38,6 +42,96 @@ body {
   border-radius: 999px;
 }
 
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-bg-active);
+}
+
 *::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ------------------------------- 自定义滑块 ------------------------------- */
+
+input[type='range'].melody-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type='range'].melody-range:disabled {
+  cursor: default;
+}
+
+input[type='range'].melody-range:focus {
+  outline: none;
+}
+
+input[type='range'].melody-range::-webkit-slider-runnable-track {
+  height: 16px;
+  background: transparent;
+}
+
+input[type='range'].melody-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: var(--color-fg);
+  opacity: 0;
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  transition: opacity 120ms ease;
+}
+
+input[type='range'].melody-range:hover::-webkit-slider-thumb,
+input[type='range'].melody-range:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+/* -------------------------------- 动画 -------------------------------- */
+
+@keyframes melody-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.melody-toast-in {
+  animation: melody-toast-in 160ms ease-out;
+}
+
+@keyframes melody-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.melody-fade-in {
+  animation: melody-fade-in 140ms ease-out;
+}
+
+@keyframes melody-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.melody-indeterminate {
+  animation: melody-indeterminate 1.2s ease-in-out infinite;
 }

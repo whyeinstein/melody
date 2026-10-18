@@ -1,7 +1,15 @@
-:root {
+/**
+ * 设计变量。
+ *
+ * 深色是默认主题；浅色通过 <html data-theme="light"> 覆盖同名变量。
+ * 这些变量同时注册进 Tailwind 的 @theme，因此组件里可以直接使用
+ * bg-bg / bg-bg-elevated / text-fg / text-fg-muted / border-border / text-accent 等工具类。
+ */
+@theme {
   --color-bg: #0b0c10;
   --color-bg-elevated: #13151b;
   --color-bg-hover: #1b1e27;
+  --color-bg-active: #232734;
   --color-border: #262a35;
   --color-fg: #e8eaf0;
   --color-fg-muted: #9aa0ae;
@@ -10,20 +18,28 @@
   --color-success: #3ddc97;
   --color-warning: #ffb454;
   --color-danger: #ff6b6b;
+}
+
+:root {
+  color-scheme: dark;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-bg: #f7f8fa;
-    --color-bg-elevated: #ffffff;
-    --color-bg-hover: #eef0f4;
-    --color-border: #dde1e8;
-    --color-fg: #1b1e27;
-    --color-fg-muted: #5b6270;
-    --color-accent: #5a3df0;
-    --color-accent-soft: rgba(90, 61, 240, 0.12);
-  }
+/* 浅色主题：保持同样的信息层级，只是把背景/前景反转。 */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-bg: #f7f8fa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-hover: #eef0f4;
+  --color-bg-active: #e2e6ee;
+  --color-border: #dde1e8;
+  --color-fg: #1b1e27;
+  --color-fg-muted: #5b6270;
+  --color-accent: #5a3df0;
+  --color-accent-soft: rgba(90, 61, 240, 0.12);
+  --color-success: #12895a;
+  --color-warning: #a3611b;
+  --color-danger: #d93636;
 }

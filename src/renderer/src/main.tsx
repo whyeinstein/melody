@@ -1,13 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { zhCN } from './i18n/zh-CN'
 import './styles/global.css'
 
 const container = document.getElementById('root')
-if (!container) throw new Error('找不到 #root 容器')
+if (!container) throw new Error(zhCN.errors.rootContainer)
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>
 )

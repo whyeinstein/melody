@@ -1,13 +1,8 @@
-import { ipcMain } from 'electron'
-import type { AppInfo, IpcResult } from '@shared/ipc/contracts'
-import { errorMessage } from '../services/logging'
+import type { AppInfo } from '@shared/ipc/contracts'
+import type { AppContext } from '../services/context'
+import { createHandlers } from './handlers'
+import { registerIpcRouter } from './router'
 
-export function registerIpcHandlers(getAppInfo: () => Promise<AppInfo>): void {
-  ipcMain.handle('app:info', async (): Promise<IpcResult<AppInfo>> => {
-    try {
-      return { ok: true, data: await getAppInfo() }
-    } catch (error) {
-      return { ok: false, error: { code: 'E_APP_INFO', message: errorMessage(error) } }
-    }
-  })
+export function registerIpcHandlers(context: AppContext, getAppInfo: () => Promise<AppInfo>): void {
+  registerIpcRouter(createHandlers(context, getAppInfo))
 }

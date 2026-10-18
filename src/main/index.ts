@@ -4,11 +4,13 @@ import { dirname, join } from 'node:path'
 import type { AppInfo } from '@shared/ipc/contracts'
 import { createMainWindow } from './window'
 import { registerIpcHandlers } from './ipc'
+import { createAppContext, type AppContext } from './services/context'
 import { probeStorage } from './services/storage/probe'
 import { probeFfmpeg } from './services/media/ffmpeg'
 import { errorMessage, logError, logInfo } from './services/logging'
 
 let mainWindow: BrowserWindow | null = null
+let appContext: AppContext | null = null
 let appInfoPromise: Promise<AppInfo> | null = null
 
 function getAppInfo(): Promise<AppInfo> {
@@ -40,10 +42,11 @@ function focusMainWindow(): void {
   mainWindow.focus()
 }
 
-function bootstrap(): void {
-  registerIpcHandlers(getAppInfo)
-
+async function bootstrap(): Promise<void> {
   const headless = process.env['MELODY_HEADLESS'] === '1'
+
+  appContext = await createAppContext()
+  registerIpcHandlers(appContext, getAppInfo)
 
   if (!headless) {
     mainWindow = createMainWindow()
@@ -57,7 +60,8 @@ function bootstrap(): void {
       logInfo(
         `启动完成 headless=${headless} electron=${info.electron} chrome=${info.chrome} node=${info.node} ` +
           `storage=${info.storage.engine}(${info.storage.ok ? 'ok' : 'unavailable'}) ` +
-          `ffmpeg=${info.ffmpeg.found ? (info.ffmpeg.version ?? 'found') : 'missing'}`
+          `ffmpeg=${info.ffmpeg.found ? (info.ffmpeg.version ?? 'found') : 'missing'} ` +
+          `mediaPort=${appContext?.media.port ?? '-'} db=${appContext?.paths.dbFile ?? '-'}`
       )
       if (headless || process.env['MELODY_SMOKE'] === '1') {
         setTimeout(() => app.quit(), 1500)
@@ -89,5 +93,9 @@ if (!hasSingleInstanceLock) {
   })
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
+  })
+  app.on('will-quit', () => {
+    void appContext?.dispose()
+    appContext = null
   })
 }

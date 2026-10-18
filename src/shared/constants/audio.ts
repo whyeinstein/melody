@@ -59,7 +59,14 @@ const MIME_BY_EXTENSION: Readonly<Record<string, string>> = {
   '.dsf': 'audio/x-dsf',
   '.dff': 'audio/x-dff',
   '.mka': 'audio/x-matroska',
-  '.m4b': 'audio/mp4'
+  '.m4b': 'audio/mp4',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.bmp': 'image/bmp',
+  '.avif': 'image/avif'
 }
 
 export function mimeForExtension(ext: string): string {
