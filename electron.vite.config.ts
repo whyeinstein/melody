@@ -39,6 +39,8 @@ export default defineConfig({
     resolve: { alias },
     plugins: [react(), tailwindcss()],
     build: {
+      // QtWebEngine 5.15 内核为 Chromium 87，需要把语法降级到该版本。
+      target: 'chrome87',
       rollupOptions: {
         input: { index: resolve('src/renderer/index.html') }
       }
