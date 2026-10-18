@@ -7,11 +7,37 @@ import { registerIpcHandlers } from './ipc'
 import { createAppContext, type AppContext } from './services/context'
 import { probeStorage } from './services/storage/probe'
 import { probeFfmpeg } from './services/media/ffmpeg'
-import { errorMessage, logError, logInfo } from './services/logging'
+import {
+  configureBootLog,
+  errorMessage,
+  logError,
+  logInfo,
+  writeBootLog
+} from './services/logging'
 
 let mainWindow: BrowserWindow | null = null
 let appContext: AppContext | null = null
 let appInfoPromise: Promise<AppInfo> | null = null
+
+// Chromium 初始化失败时控制台可能一片空白，先建立落盘日志再继续。
+try {
+  const bootLogPath = join(app.getPath('userData'), 'logs', 'boot.log')
+  mkdirSync(dirname(bootLogPath), { recursive: true })
+  configureBootLog(bootLogPath)
+  writeBootLog(
+    'main',
+    `module loaded pid=${process.pid} electron=${process.versions.electron ?? 'unknown'} node=${process.versions.node ?? 'unknown'}`
+  )
+} catch (error) {
+  logError('初始化启动日志失败:', errorMessage(error))
+}
+
+process.on('uncaughtException', (error) => {
+  writeBootLog('uncaughtException', errorMessage(error))
+})
+process.on('unhandledRejection', (reason) => {
+  writeBootLog('unhandledRejection', errorMessage(reason))
+})
 
 function getAppInfo(): Promise<AppInfo> {
   appInfoPromise ??= (async () => {
@@ -44,12 +70,27 @@ function focusMainWindow(): void {
 
 async function bootstrap(): Promise<void> {
   const headless = process.env['MELODY_HEADLESS'] === '1'
+  writeBootLog('main', `bootstrap start headless=${headless}`)
 
   appContext = await createAppContext()
+  writeBootLog('main', `context ready media=${appContext.media.port}`)
   registerIpcHandlers(appContext, getAppInfo)
 
   if (!headless) {
     mainWindow = createMainWindow()
+    writeBootLog('main', 'window created')
+    mainWindow.webContents.on('did-finish-load', () => {
+      writeBootLog('renderer', 'did-finish-load')
+    })
+    mainWindow.webContents.on('did-fail-load', (_event, code, description) => {
+      writeBootLog('renderer', `did-fail-load ${code} ${description}`)
+    })
+    mainWindow.webContents.on('render-process-gone', (_event, details) => {
+      writeBootLog('renderer', `render-process-gone ${details.reason} exitCode=${details.exitCode}`)
+    })
+    mainWindow.once('ready-to-show', () => {
+      writeBootLog('main', 'ready-to-show')
+    })
     mainWindow.on('closed', () => {
       mainWindow = null
     })
