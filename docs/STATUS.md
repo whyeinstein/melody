@@ -31,7 +31,8 @@
 
 ### 3.3 音乐库
 
-- 音乐来源抽象 `core/sources/`：`MusicSource` 接口 + `LocalSource`（已实现）+ `RemoteSource` / `WebDavSource`（**仅接口占位**，见 `docs/remote-library-interface.md`）
+- 音乐来源抽象 `core/sources/`：`MusicSource` 接口 + `LocalSource`（已实现）+ `WebDavSource`
+  （**已实现来源登记、DPAPI 密码加密与连接测试**；扫描/封面/播放待实现，见 `docs/remote-library-interface.md`）
 - 增量扫描（size + mtime 未变则跳过），自动清理消失文件，扫描错误计数
 - `ffprobe` 解析标签（mp3/flac/ogg/m4a/wav 等）、内嵌封面导出缓存
 - 支持 mp3 / flac / wav / ogg / oga / opus / m4a / aac / wma / ape / wv / aiff / aif / m4b / dsf / dff
@@ -58,7 +59,7 @@
 
 ### 3.6 工程化
 
-- 测试：**31 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描）
+- 测试：**44 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描、DPAPI 凭据、WebDAV 客户端与来源集成）
 - Electron 资产测试：62 个 TypeScript 测试全绿（保留但不再使用）
 - 打包：`scripts/build-exe.ps1` → `dist/Melody/Melody.exe`（onedir），**实测可启动并出图**；内置 ffmpeg/ffprobe 到 `_internal/`
 - 文档：`docs/architecture-redesign.md`、`docs/remote-library-interface.md`、`docs/screenshots/`（7 张页面截图）
@@ -70,7 +71,7 @@
 | 阶段 0 工程骨架 | ✅ 完成 | Electron 版完成；构建/测试/隔离约定被原生版沿用 |
 | 阶段 1 核心闭环 | ✅ 完成（原生实现） | 扫描、浏览、搜索、播放、队列、歌单、收藏均已可用 |
 | 阶段 2 体验补全 | ◐ 部分 | 已有：格式转码、主题色、会话恢复、设置页；缺：**歌词、均衡器、可视化、托盘、全局媒体键、迷你模式、睡眠定时器、倍速播放** |
-| 阶段 3 管理与生态 | ◐ 部分 | 已有：设置、缓存清理、曲库统计、来源抽象；缺：**标签编辑、智能歌单、M3U/PLS 导入导出、插件系统、主题包、i18n**；WebDAV 仅接口占位 |
+| 阶段 3 管理与生态 | ◐ 部分 | 已有：设置、缓存清理、曲库统计、来源抽象、WebDAV 连接测试与凭据加密；缺：**标签编辑、智能歌单、M3U/PLS 导入导出、插件系统、主题包、i18n**；WebDAV 扫描/播放待实现 |
 
 ## 5. 未完成清单（按优先级）
 
@@ -88,7 +89,7 @@
 7. 均衡器（10 段）与可视化
 8. 标签编辑（ffmpeg 无损改写 + 原子替换）
 9. 智能歌单（查询 DSL）、M3U/PLS 导入导出
-10. WebDAV 实装（按 `docs/remote-library-interface.md` 的六步）
+10. WebDAV 实装：连接测试已完成，剩余扫描/封面/播放代理（按 `docs/remote-library-interface.md`）
 11. 多语言、主题包
 
 ## 6. 已知问题与技术债
@@ -102,7 +103,7 @@
 ## 7. 质量快照
 
 ```
-Python 测试   31 passed
+Python 测试   44 passed
 TypeScript    62 passed（Electron 资产）
 打包          dist/Melody/Melody.exe 可启动（v0.2.0）
 截图          docs/screenshots/*.png（7 张）
