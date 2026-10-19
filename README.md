@@ -78,6 +78,30 @@ python -m unittest discover -s tests_py -v
 设置读写、播放队列（随机/循环/增删）、播放控制器（播放记录/自动切歌/会话恢复）、
 扫描入库与增量扫描（扫描测试需要系统 ffmpeg）。
 
+## 打包（Windows，自带 ffmpeg）
+
+打包版不依赖用户安装 Python 或 ffmpeg：
+
+1. 安装 PyInstaller：`pip install pyinstaller`（也可把解包目录传给脚本的 `-PyInstallerPath`）；
+2. 准备 ffmpeg 的 bin 目录（含 `ffmpeg.exe`、`ffprobe.exe`）：
+   默认读取 `MELODY_FFMPEG_DIR`，否则用 `D:\tool\ffmpeg-7.0.2-full_build\bin`，可用 `-FfmpegDir` 覆盖；
+3. 双击 `scripts\build-exe.cmd`，或运行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-exe.ps1
+```
+
+输出 `dist\Melody\Melody.exe`（onedir，随包附带 ffmpeg/ffprobe，目录约 410 MB）。
+程序查找 ffmpeg 的顺序：`MELODY_FFMPEG_DIR` → 打包目录 → `vendor\ffmpeg\bin` → `%ProgramFiles%\ffmpeg\bin` → `PATH`。
+
+排查启动问题时可以用控制台调试版：
+
+```powershell
+$env:MELODY_CONSOLE = "1"
+python -m PyInstaller packaging\melody.spec --noconfirm --clean --distpath dist
+# 输出 dist\MelodyDebug\MelodyDebug.exe（带控制台）
+```
+
 ## 关于 Electron 版本（已弃用）
 
 `src/` 下保留了一套 Electron + React 实现（功能更完整，含专辑/艺术家视图、队列抽屉、主题等），
@@ -88,8 +112,9 @@ python -m unittest discover -s tests_py -v
 
 ## 后续计划
 
-1. 远程音乐库（先接 WebDAV 或 Navidrome，复用 `core/sources/base.py` 接口）
-2. 歌词（.lrc 与内嵌）显示
-3. 系统托盘、全局媒体键、迷你模式
-4. 专辑/艺术家更多元数据（风格、年份筛选）、封面墙虚化背景
-5. 打包（PyInstaller）与自动更新
+1. 远程音乐库：WebDAV（复用 `core/sources/base.py` 接口与内置转码链路）
+2. 歌单拖拽排序
+3. 歌词（.lrc 与内嵌）显示
+4. 系统托盘、全局媒体键、迷你模式
+5. 专辑/艺术家更多元数据（风格、年份筛选）、封面墙虚化背景
+6. 安装包（Inno Setup / NSIS）与自动更新

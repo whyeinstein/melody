@@ -6,20 +6,72 @@ import json
 import os
 import shutil
 import subprocess
+import sys
+from pathlib import Path
 
 CREATE_NO_WINDOW = 0x08000000
 
 
+def _candidate_dirs() -> list[str]:
+    """按优先级返回可能存放 ffmpeg/ffprobe 的目录。
+
+    打包版把二进制放在 PyInstaller 的 ``_internal``（`sys._MEIPASS`）或 exe 同级；
+    开发环境可用仓库内 ``vendor/ffmpeg/bin``，或通过 ``MELODY_FFMPEG_DIR`` 指定。
+    """
+    dirs: list[str] = []
+    env_dir = os.environ.get("MELODY_FFMPEG_DIR")
+    if env_dir:
+        dirs.append(env_dir)
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        dirs.append(str(meipass))
+    if getattr(sys, "frozen", False):
+        dirs.append(os.path.dirname(sys.executable))
+
+    try:
+        repo_root = Path(__file__).resolve().parents[4]
+        dirs.append(str(repo_root / "vendor" / "ffmpeg" / "bin"))
+    except IndexError:  # pragma: no cover - 极端打包布局
+        pass
+
+    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+    dirs.append(os.path.join(program_files, "ffmpeg", "bin"))
+    return dirs
+
+
 def _tool(name: str) -> str | None:
+    executable = name + (".exe" if os.name == "nt" else "")
+    for folder in _candidate_dirs():
+        candidate = os.path.join(folder, executable)
+        if os.path.isfile(candidate):
+            return candidate
     found = shutil.which(name)
     if found:
         return found
-    candidate = os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), name + ".exe")
+    # 旧版本把 ffmpeg.exe 直接放在 Program Files 根目录。
+    candidate = os.path.join(
+        os.environ.get("ProgramFiles", r"C:\Program Files"), executable
+    )
     return candidate if os.path.exists(candidate) else None
 
 
 FFPROBE = _tool("ffprobe")
 FFMPEG = _tool("ffmpeg")
+
+
+def tool_source(path: str | None) -> str:
+    """判断工具来源，供设置页展示：内置 / 自定义 / 系统。"""
+    if not path:
+        return "未找到"
+    if getattr(sys, "frozen", False):
+        return "内置"
+    env_dir = os.environ.get("MELODY_FFMPEG_DIR")
+    if env_dir and os.path.abspath(path).startswith(os.path.abspath(env_dir)):
+        return "自定义目录"
+    if "vendor" in os.path.normpath(path).split(os.sep):
+        return "内置目录"
+    return "系统 PATH"
 
 
 def tool_status() -> dict:

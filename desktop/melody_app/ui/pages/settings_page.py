@@ -220,11 +220,15 @@ class SettingsPage(QWidget):
 
     def _sync_library_tools(self) -> None:
         status = ffprobe.tool_status()
+        probe_path = status["ffprobe"]
+        ffmpeg_path = status["ffmpeg"]
         self.ffprobe_label.setText(
-            f"ffprobe：{status['ffprobe'] or '未找到（标签解析不可用）'}"
+            f"ffprobe（{ffprobe.tool_source(probe_path)}）："
+            f"{probe_path or '未找到（标签解析不可用）'}"
         )
         self.ffmpeg_label.setText(
-            f"ffmpeg：{status['ffmpeg'] or '未找到（封面与转码不可用）'}"
+            f"ffmpeg（{ffprobe.tool_source(ffmpeg_path)}）："
+            f"{ffmpeg_path or '未找到（封面与转码不可用）'}"
         )
 
     def _sync_data(self) -> None:

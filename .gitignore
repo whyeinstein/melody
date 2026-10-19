@@ -22,3 +22,6 @@ __pycache__/
 
 .tmp2/
 
+
+# bundled ffmpeg/ffprobe (copied by scripts/build-exe.ps1)
+vendor/ffmpeg/bin/
