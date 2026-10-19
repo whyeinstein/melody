@@ -136,8 +136,11 @@ def create_source_adapter(row, songs_repo) -> MusicSource   # 按 kind 分发
 ```
 
 - `LocalFolderSource`：目录存在即可用，曲目数由 SQL 统计。
-- `RemoteSource`：当前为占位实现，`available()` 返回 False，扫描/播放抛 `NotImplementedError`；
-  后续接入 WebDAV / Navidrome 时只需实现 `base.py` 的接口并在 `sources/remote.py` 注册，UI 无需改动。
+- `RemoteSource`：远程通用占位，`available()` 恒为 False，扫描/播放抛 `NotImplementedError`。
+- `WebDavSource`（`sources/webdav.py`）：**WebDAV 接口占位**，登记 `kind = 'webdav'` 的来源
+  （地址、用户名、TLS 选项），但**不连接、不扫描、不播放**；所有待实现方法显式抛 `NotImplementedError`。
+  实现路线与接口契约见 [remote-library-interface.md](remote-library-interface.md)。
+- 后续接入具体协议时只需实现 `RemoteSource` 的接口并注册，UI 无需改动。
 - `sources.enabled` 决定该来源是否参与「扫描全部」与歌曲列表默认可见范围（远程库可一键开关）。
 
 ## 7. 播放子系统

@@ -143,8 +143,8 @@ class SettingsPage(QWidget):
         body.addWidget(section_title("远程库"))
         body.addWidget(
             muted_label(
-                "远程音乐库支持已预留接口（core/sources/base.py 的 MusicSource），"
-                "后续可接入 WebDAV / Navidrome / Jellyfin；当前版本仅能登记来源，不参与扫描与播放。"
+                "远程音乐库当前只预留了接口（core/sources/webdav.py、docs/remote-library-interface.md），"
+                "尚未实现连接、扫描与播放；后续按 WebDAV 优先接入，全程保持纯本地、不引入在线服务。"
             )
         )
         return card

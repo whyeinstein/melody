@@ -76,15 +76,28 @@ class SourcesRepo:
             raise RuntimeError("创建本地来源失败")
         return created
 
-    def add_remote(self, name: str, path: str, config: dict | None = None) -> Source:
-        """登记远程来源（当前为占位，后续接入 WebDAV / Navidrome 等）。"""
+    def add_remote(
+        self,
+        name: str,
+        path: str,
+        config: dict | None = None,
+        protocol: str = "webdav",
+    ) -> Source:
+        """登记远程来源（当前只有接口，协议本身尚未实现）。
+
+        ``protocol`` 会写进 ``sources.kind``，用于后续 ``create_source_adapter`` 分发；
+        密码等敏感信息不要放进 config，后续由凭据存储（Windows DPAPI）提供。
+        """
+        payload = dict(config or {})
+        payload.setdefault("protocol", protocol)
         cursor = self.conn.execute(
             "INSERT INTO sources(kind, name, path, config, enabled, added_at)"
-            " VALUES('remote', ?, ?, ?, 1, ?)",
+            " VALUES(?, ?, ?, ?, 1, ?)",
             (
+                protocol,
                 name.strip() or "远程库",
                 path.strip(),
-                json.dumps(config or {}, ensure_ascii=False),
+                json.dumps(payload, ensure_ascii=False),
                 int(time.time() * 1000),
             ),
         )

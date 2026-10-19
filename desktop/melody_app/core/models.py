@@ -97,7 +97,7 @@ class Playlist:
 @dataclass(slots=True)
 class Source:
     id: int
-    kind: str  # local | remote
+    kind: str  # local | webdav | remote（其他协议将来可自行扩展）
     name: str
     path: str | None
     config: dict = field(default_factory=dict)
@@ -110,7 +110,8 @@ class Source:
 
     @property
     def kind_text(self) -> str:
-        return "本地" if self.is_local else "远程"
+        labels = {"local": "本地", "webdav": "WebDAV", "remote": "远程"}
+        return labels.get(self.kind, self.kind.upper())
 
 
 @dataclass(slots=True)

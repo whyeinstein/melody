@@ -72,7 +72,9 @@ class LibraryPage(QWidget):
         sources_header.addWidget(self.add_folder_button)
         self.add_remote_button = QPushButton("添加远程库")
         self.add_remote_button.setEnabled(False)
-        self.add_remote_button.setToolTip("远程库接口已预留，后续版本开放（WebDAV / Navidrome 等）")
+        self.add_remote_button.setToolTip(
+            "WebDAV 远程库将在后续版本实现（接口已预留：core/sources/webdav.py）"
+        )
         sources_header.addWidget(self.add_remote_button)
         sources.addLayout(sources_header)
 
@@ -81,7 +83,10 @@ class LibraryPage(QWidget):
         sources.addLayout(self.sources_box)
 
         sources.addWidget(
-            muted_label("启用/停用来源会立即影响歌曲列表；远程库当前为占位实现，接口见 core/sources/base.py。")
+            muted_label(
+                "启用/停用来源会立即影响歌曲列表；远程库（WebDAV）当前只有接口占位，"
+                "见 core/sources/webdav.py 与 docs/remote-library-interface.md。"
+            )
         )
         layout.addWidget(sources_card)
 
@@ -218,7 +223,7 @@ class LibraryPage(QWidget):
             path_label.setToolTip(source.path or "")
             text_box.addWidget(path_label)
         else:
-            text_box.addWidget(muted_label("远程库（未连接）"))
+            text_box.addWidget(muted_label(f"{source.kind_text}（未连接，接口已预留）"))
         row_layout.addLayout(text_box, 1)
 
         count_label = muted_label(f"{track_count} 首")

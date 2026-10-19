@@ -62,8 +62,14 @@ class LibraryService(QObject):
         self.sources_changed.emit()
         return source
 
-    def add_remote_source(self, name: str, url: str) -> Source:
-        source = self._sources.add_remote(name, url)
+    def add_remote_source(
+        self,
+        name: str,
+        url: str,
+        protocol: str = "webdav",
+        config: dict | None = None,
+    ) -> Source:
+        source = self._sources.add_remote(name, url, config=config, protocol=protocol)
         self.sources_changed.emit()
         return source
 

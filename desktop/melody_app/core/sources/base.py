@@ -1,9 +1,11 @@
 """音乐来源抽象：本地文件夹与远程库统一接口。
 
-后续接入 WebDAV / Navidrome / SMB 时，只需：
-1. 在 `sources/` 下新增一个 `MusicSource` 子类；
-2. 用 `register_source("kind", 子类)` 注册；
-3. UI 只依赖 `Source` 行与 `create_source_adapter()`，无需改动。
+新增远程协议的步骤（详见 ``docs/remote-library-interface.md``）：
+
+1. 在 ``sources/`` 下新增 ``MusicSource`` 子类（通常继承 ``RemoteSource``）；
+2. 用 ``register_source("kind", 子类)`` 注册；
+3. 数据库里的 ``sources.kind`` 使用同一个 kind 值；
+4. UI 只依赖 ``Source`` 行与 ``create_source_adapter()``，不需要改动页面。
 """
 
 from __future__ import annotations
@@ -45,6 +47,10 @@ class MusicSource(ABC):
     def track_count(self) -> int:
         """来源下的曲目数量。"""
 
+    def test_connection(self) -> tuple[bool, str]:
+        """连接自检，返回 ``(是否可用, 说明)``；本地来源默认看目录是否存在。"""
+        return self.available(), ""
+
     def scan(self) -> None:
         raise NotImplementedError(f"{self.kind} 来源暂不支持扫描")
 
@@ -65,6 +71,7 @@ def create_source_adapter(row: Source, songs_repo) -> MusicSource:
     """按 kind 创建适配器；未知类型回退到占位实现。"""
     from .local import LocalFolderSource
     from .remote import RemoteSource
+    from .webdav import WebDavSource  # noqa: F401 - 导入以触发注册
 
     cls = SOURCE_REGISTRY.get(row.kind)
     if cls is None:
