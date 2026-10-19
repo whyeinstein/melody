@@ -1,8 +1,20 @@
 # 远程音乐库接口（WebDAV）：预留设计
 
-- 状态：**仅接口占位，尚未实现协议**
+- 状态：**接口 + 连接测试已实现；扫描/封面/播放待实现**
 - 目标协议：WebDAV（先做）；后续可扩展 Navidrome / Jellyfin / SMB
-- 相关代码：`core/sources/base.py`、`core/sources/remote.py`、`core/sources/webdav.py`、`core/repositories/sources.py`
+- 相关代码：`core/sources/base.py`、`core/sources/remote.py`、`core/sources/webdav.py`、
+  `core/sources/webdav_client.py`、`core/credentials.py`、`core/repositories/sources.py`
+
+## 0. 已实现的部分（2026-10-19）
+
+- 远程来源登记：地址、用户名、`verify_tls` 写进 `sources`（`kind = 'webdav'`），可启停/移除；
+- 密码用 **Windows DPAPI** 加密保存在 `<数据目录>/credentials/source-<id>.bin`，不写数据库；
+- **连接测试**：`PROPFIND Depth:0`，区分 401/403/404/重定向/网络错误；
+- 目录列举客户端：`WebDavClient.list_dir()` 解析 207 Multi-Status，可过滤音频扩展名；
+- UI：「添加远程库」对话框（名称/地址/用户名/密码/证书校验/测试连接/保存）。
+
+**仍待实现**：扫描写库、元数据、封面、播放代理与播放、离线状态。下方保留完整设计。
+
 
 ## 1. 这次只做什么
 
@@ -68,10 +80,11 @@ SOURCE_REGISTRY / register_source / create_source_adapter
 
 ## 5. 实现清单（后续按顺序）
 
-- [ ] 凭据存储（DPAPI）：保存/读取、删除；UI 只显示用户名
-- [ ] 连接对话框：地址、用户名、密码、`verify_tls`、测试连接、错误提示
-- [ ] `PROPFIND` 客户端（`urllib` 或 `http.client`，不引入新依赖）
-- [ ] 递归列目录 + 音频扩展名过滤 + 忽略隐藏目录
+- [x] 凭据存储（DPAPI）：保存/读取、删除；UI 只显示用户名
+- [x] 连接对话框：地址、用户名、密码、`verify_tls`、测试连接、错误提示
+- [x] `PROPFIND` 客户端（标准库 urllib，不引入新依赖）
+- [x] 目录列举 + 音频扩展名过滤（`list_dir`，尚未接入扫描）
+- [ ] 递归列目录 + 忽略隐藏目录
 - [ ] 元数据：ffprobe 带 `Authorization` 头读远程 URL（失败时回退到文件名）
 - [ ] 扫描写库（复用 `songs.upsert_scan` 的数据结构，`path` 用相对路径）
 - [ ] 播放代理（Range + 认证 + token）

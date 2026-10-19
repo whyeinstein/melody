@@ -67,7 +67,7 @@ def register_source(kind: str, source_type: type[MusicSource]) -> type[MusicSour
     return source_type
 
 
-def create_source_adapter(row: Source, songs_repo) -> MusicSource:
+def create_source_adapter(row: Source, songs_repo, credentials=None) -> MusicSource:
     """按 kind 创建适配器；未知类型回退到占位实现。"""
     from .local import LocalFolderSource
     from .remote import RemoteSource
@@ -76,4 +76,4 @@ def create_source_adapter(row: Source, songs_repo) -> MusicSource:
     cls = SOURCE_REGISTRY.get(row.kind)
     if cls is None:
         cls = LocalFolderSource if row.kind == "local" else RemoteSource
-    return cls(row, songs_repo)
+    return cls(row, songs_repo, credentials)

@@ -1,16 +1,13 @@
-"""WebDAV 远程来源——**接口占位，尚未实现协议**。
+"""WebDAV 远程来源。
 
-数据库里可以登记 ``kind = 'webdav'`` 的来源（地址、账号、密码放在 config 里），
-但当前版本不会连接、不会扫描、不会播放。
+当前已实现：
+- 来源登记（地址、用户名、TLS 选项）与启用/停用；
+- 密码用 Windows DPAPI 加密保存在本地（不落数据库）；
+- ``test_connection()``：PROPFIND Depth:0 校验地址与认证；
+- 目录列举客户端（``WebDavClient.list_dir``），供后续扫描使用。
 
-后续实现顺序（详见 ``docs/remote-library-interface.md``）：
-
-1. 连接探测：``PROPFIND`` Depth:0，可选 Basic Auth，保存/校验凭据；
-2. 列目录：``PROPFIND`` Depth:1 逐层遍历，收集音频扩展名；
-3. 元数据：用内置 ffprobe 带 ``Authorization`` 头读取远程 URL 的标签（或先下载头部字节解析）；
-4. 播放：在本地 127.0.0.1 启动带 Range 透传的 HTTP 代理，解决 QMediaPlayer 无法带认证头；
-5. 封面：``fetch_cover`` 复用 ffmpeg 导出到本地 covers 目录；
-6. 离线：来源不可达时 ``available()`` 为 False，UI 标灰但仍保留已入库曲目。
+**尚未实现**（后续步骤）：扫描写库、元数据、封面、播放代理与播放。
+接口契约与实现清单见 ``docs/remote-library-interface.md``。
 """
 
 from __future__ import annotations
@@ -18,30 +15,70 @@ from __future__ import annotations
 from ..models import Source
 from .base import register_source
 from .remote import RemoteSource
+from .webdav_client import WebDavClient, WebDavConfig, WebDavError
 
 
 class WebDavSource(RemoteSource):
     kind = "webdav"
     protocol = "webdav"
 
-    def __init__(self, row: Source, songs_repo) -> None:
-        super().__init__(row, songs_repo)
+    def __init__(self, row: Source, songs_repo, credentials=None) -> None:
+        super().__init__(row, songs_repo, credentials)
         config = row.config or {}
         self.base_url = (row.path or "").rstrip("/")
         self.username = str(config.get("username", ""))
         self.verify_tls = bool(config.get("verify_tls", True))
-        # 密码不在这里保存/读取，后续由凭据存储（Windows DPAPI）提供。
+        self._available = False
+        self._last_message = "尚未测试连接"
 
+    # ------------------------------------------------------------------ 状态
     def available(self) -> bool:
-        return False
+        """最近一次连接测试是否成功；不会主动联网。"""
+        return self._available
+
+    @property
+    def last_message(self) -> str:
+        return self._last_message
+
+    def password(self) -> str:
+        if self._credentials is None:
+            return ""
+        try:
+            return self._credentials.load(self.id) or ""
+        except (OSError, RuntimeError):
+            return ""
+
+    def client(self) -> WebDavClient:
+        return WebDavClient(
+            WebDavConfig(
+                base_url=self.base_url,
+                username=self.username,
+                password=self.password(),
+                verify_tls=self.verify_tls,
+            )
+        )
 
     def test_connection(self) -> tuple[bool, str]:
         if not self.base_url:
-            return False, "未填写 WebDAV 地址"
-        return False, "WebDAV 远程库尚未实现（接口已预留）"
+            self._available = False
+            self._last_message = "未填写 WebDAV 地址"
+            return False, self._last_message
+        try:
+            ok, message = self.client().test_connection()
+        except WebDavError as error:
+            ok, message = False, str(error)
+        except Exception as error:  # noqa: BLE001 - 任何异常都转成可读提示
+            ok, message = False, f"连接失败：{error}"
+        self._available = ok
+        self._last_message = message
+        return ok, message
 
     def describe(self) -> str:
         return f"WebDAV · {self.base_url or '未配置地址'}"
+
+    # ----------------------------------------------------- 仍是占位的后续能力
+    # connect / list_entries / probe / fetch_cover / scan / stream_url
+    # 继承自 RemoteSource，当前显式抛 NotImplementedError。
 
 
 register_source("webdav", WebDavSource)

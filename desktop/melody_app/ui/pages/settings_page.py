@@ -143,8 +143,8 @@ class SettingsPage(QWidget):
         body.addWidget(section_title("远程库"))
         body.addWidget(
             muted_label(
-                "远程音乐库当前只预留了接口（core/sources/webdav.py、docs/remote-library-interface.md），"
-                "尚未实现连接、扫描与播放；后续按 WebDAV 优先接入，全程保持纯本地、不引入在线服务。"
+                "远程音乐库（WebDAV）已实现：来源登记、连接测试、密码 DPAPI 加密保存；"
+                "扫描、封面与播放将在后续版本接入，全程保持纯本地、不引入在线服务。"
             )
         )
         return card

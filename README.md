@@ -38,8 +38,8 @@
 - 支持 mp3 / flac / wav / ogg / oga / opus / m4a / aac / wma / ape / wv / aiff / aif / m4b / dsf / dff：
   元数据用 `ffprobe` 解析；QtMultimedia 原生不支持格式先用 `ffmpeg` 转码为 WAV 缓存后播放
 - 内嵌封面提取与缓存；深色主题、可换强调色
-- 音乐来源可插拔：本地文件夹已实现；远程库（WebDAV）目前**只有接口占位**，
-  见 `core/sources/webdav.py` 与 [docs/remote-library-interface.md](docs/remote-library-interface.md)
+- 音乐来源可插拔：本地文件夹已实现；远程库（WebDAV）已支持**来源登记、连接测试与密码加密保存**
+  （扫描/封面/播放待实现），见 [docs/remote-library-interface.md](docs/remote-library-interface.md)
 
 ## 目录
 
@@ -54,7 +54,8 @@ desktop/
       models.py              Song / Album / Playlist / Source / LibraryStats
       db.py                  SQLite schema v2 + v1→v2 自动迁移（备份 .v1.bak）
       repositories/          songs / albums / playlists / sources / settings
-      sources/               MusicSource 抽象 + local（已实现）+ remote / webdav（接口占位）
+      sources/               MusicSource 抽象 + local（已实现）+ webdav（连接测试已实现）
+      credentials.py         Windows DPAPI 凭据存储
       library/               ffprobe 封装、扫描线程、LibraryService
       playback/              AudioEngine（QMediaPlayer + 转码）、PlayQueue、PlaybackController
     ui/
@@ -66,6 +67,7 @@ desktop/
 tests_py/                    Python 自动化测试（unittest）
 docs/
   architecture-redesign.md   六页面重构设计
+  remote-library-interface.md  WebDAV 远程库接口与实现清单
   screenshots/               各页面截图
 ```
 
@@ -113,7 +115,7 @@ python -m PyInstaller packaging\melody.spec --noconfirm --clean --distpath dist
 
 ## 后续计划
 
-1. 远程音乐库：WebDAV（当前仅有接口占位，按 [docs/remote-library-interface.md](docs/remote-library-interface.md) 实现）
+1. 远程音乐库：WebDAV 扫描、封面与播放（连接测试已完成，剩余按 [docs/remote-library-interface.md](docs/remote-library-interface.md) 实现）
 2. 歌单拖拽排序
 3. 歌词（.lrc 与内嵌）显示
 4. 系统托盘、全局媒体键、迷你模式

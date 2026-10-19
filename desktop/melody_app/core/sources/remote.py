@@ -30,9 +30,10 @@ class RemoteSource(MusicSource):
     kind = "remote"
     protocol = "remote"
 
-    def __init__(self, row: Source, songs_repo) -> None:
+    def __init__(self, row: Source, songs_repo, credentials=None) -> None:
         super().__init__(row)
         self._songs = songs_repo
+        self._credentials = credentials
 
     # ------------------------------------------------------------------ 状态
     def available(self) -> bool:

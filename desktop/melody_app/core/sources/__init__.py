@@ -9,6 +9,7 @@ from .base import (
 from .local import LocalFolderSource
 from .remote import RemoteEntry, RemoteSource
 from .webdav import WebDavSource
+from .webdav_client import WebDavClient, WebDavConfig, WebDavEntry, WebDavError
 
 __all__ = [
     "LocalFolderSource",
@@ -16,6 +17,10 @@ __all__ = [
     "RemoteEntry",
     "RemoteSource",
     "SOURCE_REGISTRY",
+    "WebDavClient",
+    "WebDavConfig",
+    "WebDavEntry",
+    "WebDavError",
     "WebDavSource",
     "create_source_adapter",
     "register_source",

@@ -72,11 +72,8 @@ class SourceInterfaceTests(unittest.TestCase):
         adapter = create_source_adapter(source, self.songs)
         self.assertIsInstance(adapter, WebDavSource)
         self.assertFalse(adapter.available())
+        self.assertEqual(adapter.last_message, "尚未测试连接")
         self.assertEqual(adapter.track_count(), 0)
-
-        ok, message = adapter.test_connection()
-        self.assertFalse(ok)
-        self.assertIn("尚未实现", message)
         self.assertIn("nas.example.com", adapter.describe())
 
     def test_webdav_interface_methods_are_explicitly_unimplemented(self) -> None:

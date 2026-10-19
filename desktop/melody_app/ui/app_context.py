@@ -34,6 +34,7 @@ class AppContext(QObject):
         settings: SettingsRepo,
         library: LibraryService,
         playback: PlaybackController,
+        credentials=None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
@@ -44,6 +45,7 @@ class AppContext(QObject):
         self.settings = settings
         self.library = library
         self.playback = playback
+        self.credentials = credentials
 
         # 音乐库的变化统一转发，页面只需订阅 AppContext。
         library.sources_changed.connect(self.sources_changed)

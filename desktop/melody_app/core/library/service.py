@@ -34,10 +34,11 @@ class LibraryService(QObject):
     sources_changed = pyqtSignal()
     library_changed = pyqtSignal()
 
-    def __init__(self, songs: SongsRepo, sources: SourcesRepo) -> None:
+    def __init__(self, songs: SongsRepo, sources: SourcesRepo, credentials=None) -> None:
         super().__init__()
         self._songs = songs
         self._sources = sources
+        self._credentials = credentials
         self._queue: list[Source] = []
         self._workers: list[ScanWorker] = []
         self._active = False
@@ -51,7 +52,7 @@ class LibraryService(QObject):
 
     def adapters(self) -> dict[int, MusicSource]:
         return {
-            source.id: create_source_adapter(source, self._songs)
+            source.id: create_source_adapter(source, self._songs, self._credentials)
             for source in self._sources.list()
         }
 

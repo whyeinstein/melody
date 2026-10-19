@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
     QCheckBox,
+    QDialog,
     QFileDialog,
     QFrame,
     QHBoxLayout,
@@ -23,6 +24,7 @@ from PyQt5.QtWidgets import (
 from ...config import app_data_dir
 from ...core.models import Source
 from ..app_context import AppContext
+from ..dialogs.remote_source_dialog import RemoteSourceDialog
 from ..widgets.common import (
     Card,
     Divider,
@@ -71,10 +73,10 @@ class LibraryPage(QWidget):
         self.add_folder_button.clicked.connect(self._add_folder)
         sources_header.addWidget(self.add_folder_button)
         self.add_remote_button = QPushButton("添加远程库")
-        self.add_remote_button.setEnabled(False)
         self.add_remote_button.setToolTip(
-            "WebDAV 远程库将在后续版本实现（接口已预留：core/sources/webdav.py）"
+            "添加 WebDAV 远程库：支持连接测试与密码加密保存；扫描/播放后续实现"
         )
+        self.add_remote_button.clicked.connect(self._add_remote_source)
         sources_header.addWidget(self.add_remote_button)
         sources.addLayout(sources_header)
 
@@ -84,8 +86,8 @@ class LibraryPage(QWidget):
 
         sources.addWidget(
             muted_label(
-                "启用/停用来源会立即影响歌曲列表；远程库（WebDAV）当前只有接口占位，"
-                "见 core/sources/webdav.py 与 docs/remote-library-interface.md。"
+                "远程库（WebDAV）：已支持连接测试与 DPAPI 加密保存密码；"
+                "扫描、封面与播放待实现（见 docs/remote-library-interface.md）。"
             )
         )
         layout.addWidget(sources_card)
@@ -223,7 +225,10 @@ class LibraryPage(QWidget):
             path_label.setToolTip(source.path or "")
             text_box.addWidget(path_label)
         else:
-            text_box.addWidget(muted_label(f"{source.kind_text}（未连接，接口已预留）"))
+            target = muted_label(source.path or "未配置地址")
+            target.setToolTip(source.path or "")
+            text_box.addWidget(target)
+            text_box.addWidget(muted_label("远程库：可测试连接，扫描/播放待实现"))
         row_layout.addLayout(text_box, 1)
 
         count_label = muted_label(f"{track_count} 首")
@@ -289,6 +294,11 @@ class LibraryPage(QWidget):
             return
         self._ctx.toast(f"已添加来源「{source.name}」，开始扫描…")
         self._ctx.library.start_scan([source.id])
+
+    def _add_remote_source(self) -> None:
+        dialog = RemoteSourceDialog(self._ctx, self)
+        if dialog.exec_() == QDialog.Accepted:
+            self.refresh()
 
     def _remove_source(self, source: Source) -> None:
         answer = QMessageBox.question(

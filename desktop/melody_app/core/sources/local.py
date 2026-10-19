@@ -11,7 +11,7 @@ from .base import MusicSource, register_source
 class LocalFolderSource(MusicSource):
     kind = "local"
 
-    def __init__(self, row: Source, songs_repo) -> None:
+    def __init__(self, row: Source, songs_repo, credentials=None) -> None:
         super().__init__(row)
         self._songs = songs_repo
 

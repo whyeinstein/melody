@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from . import config
+from .core.credentials import CredentialStore
 from .core.db import Database
 from .core.library.service import LibraryService
 from .core.playback.controller import PlaybackController
@@ -24,7 +25,8 @@ def build_context(db_file: str | None = None) -> AppContext:
     sources = SourcesRepo(database)
     settings = SettingsRepo(database)
 
-    library = LibraryService(songs, sources)
+    credentials = CredentialStore(config.credentials_dir())
+    library = LibraryService(songs, sources, credentials)
     playback = PlaybackController(AudioEngine(), PlayQueue(), songs, settings)
 
     return AppContext(
@@ -35,4 +37,5 @@ def build_context(db_file: str | None = None) -> AppContext:
         settings=settings,
         library=library,
         playback=playback,
+        credentials=credentials,
     )

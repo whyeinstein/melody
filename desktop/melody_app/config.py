@@ -36,6 +36,13 @@ def covers_dir() -> str:
     return path
 
 
+def credentials_dir() -> str:
+    """DPAPI 加密后的远程库凭据目录。"""
+    path = os.path.join(app_data_dir(), "credentials")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
 AUDIO_EXTENSIONS = {
     ".mp3",
     ".flac",
