@@ -1,4 +1,4 @@
-"""六个一级页面。"""
+﻿"""六个一级页面。"""
 
 from .albums_page import AlbumsPage
 from .library_page import LibraryPage

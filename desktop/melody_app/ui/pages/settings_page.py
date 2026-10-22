@@ -1,4 +1,4 @@
-"""设置页：播放默认值、外观、音乐库工具入口、远程库占位与数据信息。"""
+﻿"""设置页：播放默认值、外观、音乐库工具入口、远程库占位与数据信息。"""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import sys
 from PyQt5.QtCore import QUrl, QT_VERSION_STR
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
+    QFrame,
     QCheckBox,
     QComboBox,
     QHBoxLayout,
@@ -57,11 +58,16 @@ class SettingsPage(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.viewport().setAutoFillBackground(False)
+
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         content = QWidget()
+        content.setAutoFillBackground(False)
+        content.setObjectName("scrollContent")
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(20, 18, 20, 20)
-        layout.setSpacing(14)
+        layout.setContentsMargins(28, 24, 28, 20)
+        layout.setSpacing(16)
 
         self.header = PageHeader("设置", "播放、外观、音乐库与数据")
         layout.addWidget(self.header)

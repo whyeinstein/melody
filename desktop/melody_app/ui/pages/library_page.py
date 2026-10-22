@@ -1,4 +1,4 @@
-"""音乐库页：音乐来源（本地 + 远程占位）、浏览方式、曲库工具。"""
+﻿"""音乐库页：音乐来源（本地 + 远程占位）、浏览方式、曲库工具。"""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import os
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
+    QFrame,
     QCheckBox,
     QDialog,
     QFileDialog,
@@ -54,10 +55,15 @@ class LibraryPage(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.viewport().setAutoFillBackground(False)
+
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         content = QWidget()
+        content.setAutoFillBackground(False)
+        content.setObjectName("scrollContent")
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(20, 18, 20, 20)
+        layout.setContentsMargins(28, 24, 28, 16)
         layout.setSpacing(14)
 
         self.header = PageHeader("音乐库", "")

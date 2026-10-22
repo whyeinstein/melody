@@ -1,0 +1,33 @@
+# PyInstaller 版本资源（写入 exe 属性，让文件看起来正规，也便于区分版本）
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(0, 2, 0, 0),
+    prodvers=(0, 2, 0, 0),
+    mask=0x3F,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0),
+  ),
+  kids=[
+    StringFileInfo(
+      [
+        StringTable(
+          '080404b0',
+          [
+            StringStruct('CompanyName', 'Melody'),
+            StringStruct('FileDescription', 'Melody - 本地音乐播放器'),
+            StringStruct('FileVersion', '0.2.0.0'),
+            StringStruct('InternalName', 'Melody'),
+            StringStruct('LegalCopyright', 'Copyright (c) 2026 whyeinstein'),
+            StringStruct('OriginalFilename', 'Melody.exe'),
+            StringStruct('ProductName', 'Melody'),
+            StringStruct('ProductVersion', '0.2.0'),
+          ],
+        )
+      ]
+    ),
+    VarFileInfo([VarStruct('Translation', [2052, 1200])]),
+  ],
+)

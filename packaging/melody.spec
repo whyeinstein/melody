@@ -64,6 +64,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(ROOT / "packaging" / "icon.ico"),
+    version=str(ROOT / "packaging" / "version_info.txt"),
 )
 
 coll = COLLECT(

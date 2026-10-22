@@ -1,4 +1,4 @@
-"""专辑页：封面墙 + 专辑详情。"""
+﻿"""专辑页：封面墙 + 专辑详情。"""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
 
 from ...core.models import Album, Song
 from ..app_context import AppContext
+from ..icons import icon
 from ..song_actions import show_song_context_menu
 from ..widgets.common import Card, EmptyState, PageHeader, muted_label, primary_button
 from ..widgets.cover import CoverLabel, cover_pixmap
@@ -47,8 +48,8 @@ class AlbumsPage(QWidget):
         # ---------------------------------------------------------- 封面墙
         grid_page = QWidget()
         grid_layout = QVBoxLayout(grid_page)
-        grid_layout.setContentsMargins(20, 18, 20, 16)
-        grid_layout.setSpacing(12)
+        grid_layout.setContentsMargins(28, 24, 28, 16)
+        grid_layout.setSpacing(16)
 
         self.header = PageHeader("专辑", "")
         grid_layout.addWidget(self.header)
@@ -58,14 +59,15 @@ class AlbumsPage(QWidget):
         self.search_edit.setPlaceholderText("搜索专辑或艺术家…")
         self.search_edit.setClearButtonEnabled(True)
         self.search_edit.setMinimumWidth(260)
+        self.search_edit.addAction(icon("search", "#667086", 16), QLineEdit.LeadingPosition)
         toolbar.addWidget(self.search_edit, 1)
         grid_layout.addLayout(toolbar)
 
         self.album_list = QListWidget()
         self.album_list.setViewMode(QListWidget.IconMode)
-        self.album_list.setIconSize(QSize(150, 150))
-        self.album_list.setGridSize(QSize(196, 246))
-        self.album_list.setSpacing(8)
+        self.album_list.setIconSize(QSize(160, 160))
+        self.album_list.setGridSize(QSize(206, 262))
+        self.album_list.setSpacing(10)
         self.album_list.setMovement(QListWidget.Static)
         self.album_list.setResizeMode(QListWidget.Adjust)
         self.album_list.setWordWrap(True)
@@ -83,11 +85,13 @@ class AlbumsPage(QWidget):
         # ------------------------------------------------------------ 详情
         detail_page = QWidget()
         detail_layout = QVBoxLayout(detail_page)
-        detail_layout.setContentsMargins(20, 18, 20, 16)
-        detail_layout.setSpacing(12)
+        detail_layout.setContentsMargins(28, 24, 28, 16)
+        detail_layout.setSpacing(16)
 
         back_row = QHBoxLayout()
         self.back_button = QPushButton("← 返回专辑")
+        self.back_button.setObjectName("ghost")
+        self.back_button.setCursor(Qt.PointingHandCursor)
         self.back_button.clicked.connect(self._go_back)
         back_row.addWidget(self.back_button)
         back_row.addStretch(1)

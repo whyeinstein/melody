@@ -1,4 +1,4 @@
-"""歌单页：歌单管理 + 歌单曲目。"""
+﻿"""歌单页：歌单管理 + 歌单曲目。"""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ class PlaylistsPage(QWidget):
     # ------------------------------------------------------------------ UI
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 18, 20, 12)
+        layout.setContentsMargins(28, 24, 28, 16)
         layout.setSpacing(12)
 
         self.header = PageHeader("歌单", "")
