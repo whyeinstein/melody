@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import base64
+import email.utils
 import ssl
 import urllib.error
 import urllib.parse
@@ -18,6 +19,7 @@ AUDIO_SUFFIXES = {
     ".mp3", ".flac", ".wav", ".ogg", ".oga", ".opus", ".m4a", ".aac",
     ".wma", ".ape", ".wv", ".aiff", ".aif", ".m4b", ".dsf", ".dff",
 }
+IGNORED_DIRS = {"$recycle.bin", "system volume information", "node_modules", ".git"}
 
 
 class WebDavError(RuntimeError):
@@ -40,6 +42,7 @@ class WebDavEntry:
     is_dir: bool = False
     size: int = 0
     modified: str = ""
+    modified_ms: int = 0
 
     @property
     def is_audio(self) -> bool:
@@ -47,6 +50,22 @@ class WebDavEntry:
             return False
         _, ext = _split_extension(self.path)
         return ext.lower() in AUDIO_SUFFIXES
+
+
+def parse_http_date(value: str) -> int:
+    """把 ``getlastmodified`` 转成毫秒时间戳；失败返回 0。"""
+    if not value:
+        return 0
+    try:
+        parsed = email.utils.parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return 0
+    if parsed is None:
+        return 0
+    try:
+        return int(parsed.timestamp() * 1000)
+    except (OverflowError, OSError, ValueError):
+        return 0
 
 
 def _split_extension(path: str) -> tuple[str, str]:
@@ -96,6 +115,7 @@ def parse_multistatus(body: bytes, base_url: str) -> list[WebDavEntry]:
                 is_dir=is_dir,
                 size=size,
                 modified=modified,
+                modified_ms=parse_http_date(modified),
             )
         )
     return entries
@@ -119,6 +139,14 @@ class WebDavClient:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         return context
+
+    def ssl_context(self) -> ssl.SSLContext:
+        """供本地播放代理复用同一套 TLS 校验策略。"""
+        return self._ssl_context()
+
+    def url_for(self, path: str = "") -> str:
+        """把来源内相对路径转成完整 WebDAV URL。"""
+        return self._url(path)
 
     def _request(
         self,
@@ -186,3 +214,27 @@ class WebDavClient:
         if status not in (200, 207):
             raise WebDavError(f"列目录失败，服务器返回 {status}")
         return parse_multistatus(body, self.base_url)
+
+    def list_tree(self, max_depth: int = 32) -> list[WebDavEntry]:
+        """递归列出所有音频文件（跳过隐藏/垃圾目录）。"""
+        audio: list[WebDavEntry] = []
+        pending: list[tuple[str, int]] = [("", 1)]
+        visited: set[str] = set()
+        while pending:
+            path, depth = pending.pop()
+            entries = self.list_dir(path)
+            for entry in entries:
+                if entry.path == path:
+                    continue
+                if entry.is_dir:
+                    name = entry.path.rsplit("/", 1)[-1].lower()
+                    if name.startswith(".") or name in IGNORED_DIRS:
+                        continue
+                    if depth >= max_depth or entry.path in visited:
+                        continue
+                    visited.add(entry.path)
+                    pending.append((entry.path, depth + 1))
+                elif entry.is_audio:
+                    audio.append(entry)
+        audio.sort(key=lambda item: item.path.lower())
+        return audio

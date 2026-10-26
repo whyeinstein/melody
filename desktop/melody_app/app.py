@@ -27,7 +27,13 @@ def build_context(db_file: str | None = None) -> AppContext:
 
     credentials = CredentialStore(config.credentials_dir())
     library = LibraryService(songs, sources, credentials)
-    playback = PlaybackController(AudioEngine(), PlayQueue(), songs, settings)
+    playback = PlaybackController(
+        AudioEngine(),
+        PlayQueue(),
+        songs,
+        settings,
+        url_resolver=library.stream_url_for,
+    )
 
     return AppContext(
         songs=songs,

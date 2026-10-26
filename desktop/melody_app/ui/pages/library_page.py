@@ -1,4 +1,4 @@
-﻿"""音乐库页：音乐来源（本地 + 远程占位）、浏览方式、曲库工具。"""
+"""音乐库页：音乐来源（本地 + 远程占位）、浏览方式、曲库工具。"""
 
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ class LibraryPage(QWidget):
         sources_header.addWidget(self.add_folder_button)
         self.add_remote_button = QPushButton("添加远程库")
         self.add_remote_button.setToolTip(
-            "添加 WebDAV 远程库：支持连接测试与密码加密保存；扫描/播放后续实现"
+            "添加 WebDAV 远程库：支持连接测试、扫描与播放（密码 DPAPI 加密保存）"
         )
         self.add_remote_button.clicked.connect(self._add_remote_source)
         sources_header.addWidget(self.add_remote_button)
@@ -92,8 +92,8 @@ class LibraryPage(QWidget):
 
         sources.addWidget(
             muted_label(
-                "远程库（WebDAV）：已支持连接测试与 DPAPI 加密保存密码；"
-                "扫描、封面与播放待实现（见 docs/remote-library-interface.md）。"
+                "远程库（WebDAV）：已支持连接测试、扫描与播放；"
+                "播放经本地 127.0.0.1 代理并透传 Range（见 docs/remote-library-interface.md）。"
             )
         )
         layout.addWidget(sources_card)
@@ -113,7 +113,7 @@ class LibraryPage(QWidget):
         scan = scan_card.body()
         scan.addWidget(section_title("扫描"))
         scan_row = QHBoxLayout()
-        self.scan_button = primary_button("重新扫描全部")
+        self.scan_button = primary_button("扫描全部来源")
         self.scan_button.clicked.connect(self._start_scan)
         scan_row.addWidget(self.scan_button)
         self.scan_status = muted_label("尚未扫描")
@@ -234,7 +234,7 @@ class LibraryPage(QWidget):
             target = muted_label(source.path or "未配置地址")
             target.setToolTip(source.path or "")
             text_box.addWidget(target)
-            text_box.addWidget(muted_label("远程库：可测试连接，扫描/播放待实现"))
+            text_box.addWidget(muted_label("远程库：已支持扫描与播放（通过本地代理）"))
         row_layout.addLayout(text_box, 1)
 
         count_label = muted_label(f"{track_count} 首")
@@ -326,7 +326,7 @@ class LibraryPage(QWidget):
 
     def _on_scan_state(self, scanning: bool) -> None:
         self.scan_button.setEnabled(not scanning)
-        self.scan_button.setText("扫描中…" if scanning else "重新扫描全部")
+        self.scan_button.setText("扫描中…" if scanning else "扫描全部来源")
         self.progress.setVisible(scanning)
         if scanning:
             self.progress.setRange(0, 0)
@@ -351,7 +351,7 @@ class LibraryPage(QWidget):
         self._ctx.toast(f"扫描失败：{message}")
         self.progress.setVisible(False)
         self.scan_button.setEnabled(True)
-        self.scan_button.setText("重新扫描全部")
+        self.scan_button.setText("扫描全部来源")
 
     # ------------------------------------------------------------------ 工具
     def _check_integrity(self) -> None:

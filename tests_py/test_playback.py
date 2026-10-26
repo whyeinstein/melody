@@ -226,6 +226,24 @@ class PlaybackControllerTests(unittest.TestCase):
         self.assertEqual(self.controller.current_song.id, self.db_songs[1].id)
         self.assertFalse(self.engine.played[-1].endswith(".wav"))
 
+    def test_url_resolver_used_for_playback(self) -> None:
+        calls: list[int] = []
+
+        def resolver(song) -> str:
+            calls.append(song.id)
+            return f"http://127.0.0.1/proxy/{song.path}"
+
+        controller = PlaybackController(
+            self.engine,
+            PlayQueue(),
+            self.songs,
+            self.settings,
+            url_resolver=resolver,
+        )
+        controller.play_songs(self.db_songs, 0)
+        self.assertEqual(calls, [self.db_songs[0].id])
+        self.assertTrue(self.engine.played[-1].startswith("http://127.0.0.1/proxy/"))
+
 
 if __name__ == "__main__":
     unittest.main()

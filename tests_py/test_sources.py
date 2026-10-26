@@ -91,8 +91,19 @@ class SourceInterfaceTests(unittest.TestCase):
             adapter.fetch_cover("a.flac", os.path.join(self.temp, "cover.jpg"))
         with self.assertRaises(NotImplementedError):
             adapter.scan()
-        with self.assertRaises(NotImplementedError):
-            adapter.stream_url("a.flac")
+
+    def test_stream_url_uses_loopback_proxy(self) -> None:
+        from melody_app.core.sources.webdav_proxy import shutdown_all
+
+        source = self.sources.add_remote("NAS", "https://nas.example.com/dav")
+        adapter = create_source_adapter(source, self.songs)
+        try:
+            url = adapter.stream_url("folder/a.flac")
+            self.assertTrue(url.startswith("http://127.0.0.1:"), url)
+            self.assertIn("/media/", url)
+            self.assertIn("folder/a.flac", url)
+        finally:
+            shutdown_all()
 
     def test_webdav_without_url_reports_missing_address(self) -> None:
         source = self.sources.add_remote("未配置", "")

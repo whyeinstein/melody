@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (
 
 from ..config import APP_NAME, APP_TAGLINE, APP_VERSION, avatar_file
 from ..core.profile import has_avatar
+from ..core.sources.webdav_proxy import shutdown_all
 from .app_context import AppContext
 from .avatar_actions import choose_avatar, clear_avatar
 from .icons import icon
@@ -292,4 +293,5 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         self._ctx.playback.save_session()
         self._ctx.playback.stop()
+        shutdown_all()
         super().closeEvent(event)

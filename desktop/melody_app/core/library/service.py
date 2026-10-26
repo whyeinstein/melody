@@ -7,10 +7,11 @@ import os
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from ...config import cache_dir, covers_dir
-from ..models import LibraryStats, Source
+from ..models import LibraryStats, Song, Source
 from ..repositories.songs import SongsRepo
 from ..repositories.sources import SourcesRepo
 from ..sources import MusicSource, create_source_adapter
+from .remote_scanner import RemoteScanWorker
 from .scanner import ScanWorker
 
 
@@ -40,7 +41,7 @@ class LibraryService(QObject):
         self._sources = sources
         self._credentials = credentials
         self._queue: list[Source] = []
-        self._workers: list[ScanWorker] = []
+        self._workers: list = []
         self._active = False
 
     # ------------------------------------------------------------------ 来源
@@ -95,10 +96,10 @@ class LibraryService(QObject):
         candidates = [
             source
             for source in self._sources.list(include_disabled=False)
-            if source.kind == "local" and (source_ids is None or source.id in source_ids)
+            if source_ids is None or source.id in source_ids
         ]
         if not candidates:
-            self.scan_failed.emit("没有可扫描的本地来源")
+            self.scan_failed.emit("没有可扫描的来源")
             return False
         self._queue = candidates
         self._active = True
@@ -113,7 +114,16 @@ class LibraryService(QObject):
             self.library_changed.emit()
             return
         source = self._queue.pop(0)
-        worker = ScanWorker(self._songs.database_path, source)
+        if source.kind == "local":
+            worker = ScanWorker(self._songs.database_path, source)
+        else:
+            password = ""
+            if self._credentials is not None:
+                try:
+                    password = self._credentials.load(source.id) or ""
+                except (OSError, RuntimeError):
+                    password = ""
+            worker = RemoteScanWorker(self._songs.database_path, source, password)
         worker.progress.connect(self.scan_progress)
         worker.finished_scan.connect(self._on_finished)
         worker.failed.connect(self._on_failed)
@@ -121,7 +131,7 @@ class LibraryService(QObject):
         self._workers.append(worker)
         worker.start()
 
-    def _forget_worker(self, worker: ScanWorker) -> None:
+    def _forget_worker(self, worker) -> None:
         if worker in self._workers:
             self._workers.remove(worker)
 
@@ -134,16 +144,31 @@ class LibraryService(QObject):
         self._start_next()
 
     # ------------------------------------------------------------------ 工具
+    def stream_url_for(self, song: Song) -> str:
+        """解析播放地址：本地直返路径，远程返回本地代理 URL。"""
+        if song.source_id is None:
+            return song.path
+        source = self._sources.get(int(song.source_id))
+        if source is None or source.kind == "local":
+            return song.path
+        adapter = create_source_adapter(source, self._songs, self._credentials)
+        return adapter.stream_url(song.path)
+
     def stats(self) -> LibraryStats:
         return self._songs.stats()
 
     def check_integrity(self) -> dict:
-        """检查文件是否仍然存在，更新 songs.missing；返回统计。"""
+        """检查本地文件是否仍然存在，更新 songs.missing；远程曲目跳过。"""
         songs = self._songs.query(include_missing=True)
+        source_kinds = {source.id: source.kind for source in self._sources.list()}
         missing_ids: list[int] = []
         restored_ids: list[int] = []
         missing_total = 0
+        checked = 0
         for song in songs:
+            if song.source_id is not None and source_kinds.get(int(song.source_id)) != "local":
+                continue
+            checked += 1
             exists = os.path.exists(song.path)
             if not exists:
                 missing_total += 1
@@ -154,7 +179,7 @@ class LibraryService(QObject):
         self._songs.set_missing(missing_ids, True)
         self._songs.set_missing(restored_ids, False)
         result = {
-            "checked": len(songs),
+            "checked": checked,
             "missing": missing_total,
             "restored": len(restored_ids),
         }

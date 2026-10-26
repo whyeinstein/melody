@@ -36,12 +36,14 @@ class PlaybackController(QObject):
         queue: PlayQueue,
         songs: SongsRepo,
         settings: SettingsRepo,
+        url_resolver=None,
     ) -> None:
         super().__init__()
         self._engine = engine
         self._queue = queue
         self._songs = songs
         self._settings = settings
+        self._url_resolver = url_resolver
         self._current_song: Song | None = None
         self._state = "stopped"
         self._pending_seek: int | None = None
@@ -110,7 +112,7 @@ class PlaybackController(QObject):
         self._current_song = song
         self._state = "loading"
         self.state_changed.emit("loading")
-        self._engine.play_path(song.path, autoplay=True)
+        self._engine.play_path(self._play_url(song), autoplay=True)
         if record:
             try:
                 self._songs.record_play(song.id)
@@ -119,6 +121,15 @@ class PlaybackController(QObject):
         self._settings.set(KEY_LAST_SONG, song.id)
         self._settings.set(KEY_LAST_POSITION, 0)
         self.track_changed.emit(song)
+
+    def _play_url(self, song: Song) -> str:
+        """本地曲目直接用路径；远程曲目交给 LibraryService 换成代理 URL。"""
+        if self._url_resolver is None:
+            return song.path
+        try:
+            return self._url_resolver(song)
+        except Exception:  # noqa: BLE001 - 远程不可用时退回原路径，由引擎报错
+            return song.path
 
     def toggle(self) -> None:
         if self._current_song is None:
@@ -216,7 +227,7 @@ class PlaybackController(QObject):
         self._queue.set_queue([song], 0)
         self._current_song = song
         self._pending_seek = position if position > 1000 else None
-        self._engine.play_path(song.path, autoplay=False)
+        self._engine.play_path(self._play_url(song), autoplay=False)
         self.track_changed.emit(song)
         return True
 

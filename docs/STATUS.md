@@ -32,8 +32,9 @@
 
 ### 3.3 音乐库
 
-- 音乐来源抽象 `core/sources/`：`MusicSource` 接口 + `LocalSource`（已实现）+ `WebDavSource`
-  （**已实现来源登记、DPAPI 密码加密与连接测试**；扫描/封面/播放待实现，见 `docs/remote-library-interface.md`）
+- 音乐来源抽象 `core/sources/`：`MusicSource` 接口 + `LocalSource` + `WebDavSource`
+  （**来源登记、DPAPI 密码、连接测试、递归扫描、封面、远程播放全部已实现**；
+  `webdav_proxy.py` 提供本地 Range 代理，见 `docs/remote-library-interface.md`）
 - 增量扫描（size + mtime 未变则跳过），自动清理消失文件，扫描错误计数
 - `ffprobe` 解析标签（mp3/flac/ogg/m4a/wav 等）、内嵌封面导出缓存
 - 支持 mp3 / flac / wav / ogg / oga / opus / m4a / aac / wma / ape / wv / aiff / aif / m4b / dsf / dff
@@ -46,6 +47,8 @@
 - 播放次数、最近播放、收藏、播放历史写入 SQLite
 - 会话恢复：记住上次曲目与进度（设置中可关闭）
 - 持续播放状态、音量、静音持久化
+- 远程曲目：`LibraryService.stream_url_for` 注入 URL 解析器，mp3/wav 先经代理下载到缓存、
+  其他格式转 WAV；拖动进度正常
 
 ### 3.5 页面能力
 
@@ -53,14 +56,14 @@
 | --- | --- |
 | 歌曲 | 全部歌曲表；搜索（300ms 防抖）；筛选 全部/收藏/最近播放；按来源筛选；列排序；双击播放；右键菜单（播放、加入歌单、收藏、定位文件） |
 | 歌单 | 新建 / 重命名 / 删除；加曲 / 移曲 / 上移 / 下移；播放全部 |
-| 音乐库 | 来源管理（启停、移除、目录存在性检测）；扫描进度与结果；曲库统计（歌曲/专辑/艺术家/总时长/失效数）；失效文件检查与清理；清转码缓存；打开数据目录 |
+| 音乐库 | 来源管理（本地/WebDAV 启停、移除、目录存在性检测、连接测试）；扫描全部来源（本地+远程）；曲库统计；失效文件检查与清理；清转码缓存；打开数据目录 |
 | 专辑 | 封面墙 + 搜索；专辑详情（封面、艺术家、年份、曲目表、播放整张） |
 | 播放 | 大封面、收藏、进度、传输控制、随机与循环、当前队列 |
 | 设置 | 默认音量、启动恢复上次播放、默认播放模式与随机、强调色、ffmpeg 状态、清缓存、版本信息 |
 
 ### 3.6 工程化
 
-- 测试：**50 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描、DPAPI 凭据、WebDAV 客户端与来源集成、头像裁剪与文件处理）
+- 测试：**61 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描、DPAPI 凭据、WebDAV 客户端/代理/扫描与远程播放、头像裁剪）
 - Electron 资产测试：62 个 TypeScript 测试全绿（保留但不再使用）
 - 打包：`scripts/build-exe.ps1` → `dist/Melody/Melody.exe`（onedir），**实测可启动并出图**；内置 ffmpeg/ffprobe 到 `_internal/`
 - 文档：`docs/architecture-redesign.md`、`docs/remote-library-interface.md`、`docs/screenshots/`（7 张页面截图）
@@ -90,7 +93,7 @@
 7. 均衡器（10 段）与可视化
 8. 标签编辑（ffmpeg 无损改写 + 原子替换）
 9. 智能歌单（查询 DSL）、M3U/PLS 导入导出
-10. WebDAV 实装：连接测试已完成，剩余扫描/封面/播放代理（按 `docs/remote-library-interface.md`）
+10. WebDAV 已完成：登记/凭据/连接测试/扫描/封面/播放；剩余离线置灰、远程缓存复用与标签编辑
 11. 多语言、主题包
 
 ## 6. 已知问题与技术债
@@ -104,7 +107,7 @@
 ## 7. 质量快照
 
 ```
-Python 测试   50 passed
+Python 测试   61 passed
 TypeScript    62 passed（Electron 资产）
 打包          dist/Melody/Melody.exe 可启动（v0.2.0）
 截图          docs/screenshots/*.png（7 张）

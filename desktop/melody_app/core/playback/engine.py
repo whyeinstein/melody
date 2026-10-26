@@ -18,23 +18,32 @@ NATIVE_FORMATS = {".mp3", ".wav"}
 
 
 class TranscodeWorker(QThread):
-    done = pyqtSignal(str, str)  # (wav 路径, 错误信息)
+    done = pyqtSignal(str, str)  # (本地缓存路径, 错误信息)
 
-    def __init__(self, source: str, mtime_ms: int) -> None:
+    def __init__(self, source: str, mtime_ms: int, download_only: bool = False) -> None:
         super().__init__()
         self._source = source
         self._mtime_ms = mtime_ms
+        self._download_only = download_only
 
     def _target(self) -> str:
         digest = hashlib.sha1(f"{self._source}:{self._mtime_ms}".encode("utf-8")).hexdigest()[:20]
-        return os.path.join(cache_dir(), digest + ".wav")
+        extension = ".wav"
+        if self._download_only:
+            source_ext = os.path.splitext(self._source.split("?", 1)[0])[1].lower()
+            if source_ext in {".mp3", ".wav"}:
+                extension = source_ext
+        return os.path.join(cache_dir(), digest + extension)
 
     def run(self) -> None:
         target = self._target()
         if os.path.exists(target) and os.path.getsize(target) > 1024:
             self.done.emit(target, "")
             return
-        ok = ffprobe.transcode_to_wav(self._source, target)
+        if self._download_only:
+            ok = ffprobe.remux_to_file(self._source, target)
+        else:
+            ok = ffprobe.transcode_to_wav(self._source, target)
         if ok and os.path.exists(target):
             self.done.emit(target, "")
         else:
@@ -86,8 +95,11 @@ class AudioEngine(QObject):
     def play_path(self, path: str, autoplay: bool = True) -> None:
         self.current_path = path
         self._pending_autoplay = autoplay
-        extension = os.path.splitext(path)[1].lower()
-        if extension in NATIVE_FORMATS:
+        extension = os.path.splitext(path.split("?", 1)[0])[1].lower()
+        is_remote = path.lower().startswith(("http://", "https://"))
+        # 本地 mp3/wav 直接交给 QMediaPlayer；远程 URL 先经本地代理用 ffmpeg
+        # 下载/转码成缓存文件，避免 DirectShow 对 HTTP 源支持不稳定。
+        if extension in NATIVE_FORMATS and not is_remote:
             self._load(path)
             return
         try:
@@ -95,7 +107,11 @@ class AudioEngine(QObject):
         except OSError:
             mtime_ms = int(time.time() * 1000)
         self.state_changed.emit("loading")
-        self._worker = TranscodeWorker(path, mtime_ms)
+        self._worker = TranscodeWorker(
+            path,
+            mtime_ms,
+            download_only=is_remote and extension in NATIVE_FORMATS,
+        )
         self._worker.done.connect(self._on_transcoded)
         self._worker.start()
 
@@ -107,7 +123,12 @@ class AudioEngine(QObject):
         self._load(target)
 
     def _load(self, path: str) -> None:
-        self._media.setMedia(QMediaContent(QUrl.fromLocalFile(path)))
+        # 远程曲目通过本地代理播放，必须是普通 URL；本地文件仍用 file URL。
+        if path.lower().startswith(("http://", "https://")):
+            url = QUrl(path)
+        else:
+            url = QUrl.fromLocalFile(path)
+        self._media.setMedia(QMediaContent(url))
         self.track_started.emit(path)
         if self._pending_autoplay:
             self._media.play()

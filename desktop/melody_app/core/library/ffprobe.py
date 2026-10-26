@@ -211,3 +211,17 @@ def transcode_to_wav(source: str, target: str) -> bool:
     except (subprocess.TimeoutExpired, OSError):
         return False
     return result.returncode == 0 and os.path.exists(target)
+
+
+def remux_to_file(source: str, target: str) -> bool:
+    """远程 mp3/wav 先下载到本地缓存（不重编码），再交给 QMediaPlayer。"""
+    if not FFMPEG:
+        return False
+    try:
+        result = _run(
+            [FFMPEG, "-y", "-v", "error", "-i", source, "-vn", "-c:a", "copy", target],
+            timeout=600,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    return result.returncode == 0 and os.path.exists(target)

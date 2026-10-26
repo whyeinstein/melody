@@ -174,8 +174,9 @@ class SettingsPage(QWidget):
         body.addWidget(section_title("远程库"))
         body.addWidget(
             muted_label(
-                "远程音乐库（WebDAV）已实现：来源登记、连接测试、密码 DPAPI 加密保存；"
-                "扫描、封面与播放将在后续版本接入，全程保持纯本地、不引入在线服务。"
+                "远程音乐库（WebDAV）已实现：来源登记、连接测试、扫描、封面与播放；"
+                "播放经本地 127.0.0.1 代理并透传 Range，密码用 DPAPI 加密保存。"
+                "全程保持纯本地、不引入在线服务。"
             )
         )
         return card
