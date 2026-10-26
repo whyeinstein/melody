@@ -1,4 +1,4 @@
-﻿"""设置页：播放默认值、外观、音乐库工具入口、远程库占位与数据信息。"""
+"""设置页：播放默认值、外观、音乐库工具入口、远程库占位与数据信息。"""
 
 from __future__ import annotations
 
@@ -20,12 +20,15 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from ...config import APP_VERSION, app_data_dir
+from ...config import APP_VERSION, app_data_dir, avatar_file
 from ...core.library import ffprobe
 from ...core.playback.queue import RepeatMode
+from ...core.profile import has_avatar
 from ...core.repositories.settings import KEY_RESTORE_SESSION
 from ..app_context import AppContext
+from ..avatar_actions import choose_avatar, clear_avatar
 from ..theme import ACCENT_CHOICES
+from ..widgets.avatar import AvatarButton
 from ..widgets.common import (
     Card,
     Divider,
@@ -121,6 +124,28 @@ class SettingsPage(QWidget):
         card = Card()
         body = card.body()
         body.addWidget(section_title("外观"))
+
+        avatar_row = QHBoxLayout()
+        avatar_row.setSpacing(12)
+        self.avatar_preview = AvatarButton(44)
+        self.avatar_preview.clicked.connect(self._choose_avatar)
+        self.avatar_preview.remove_requested.connect(self._clear_avatar)
+        avatar_row.addWidget(self.avatar_preview)
+
+        avatar_text = QVBoxLayout()
+        avatar_text.setSpacing(2)
+        avatar_text.addWidget(QLabel("头像"))
+        self.avatar_hint = muted_label("点击头像或右侧按钮更换")
+        avatar_text.addWidget(self.avatar_hint)
+        avatar_row.addLayout(avatar_text, 1)
+
+        self.avatar_change_button = _button("更换头像", self._choose_avatar)
+        self.avatar_remove_button = _button("移除头像", self._clear_avatar)
+        avatar_row.addWidget(self.avatar_change_button)
+        avatar_row.addWidget(self.avatar_remove_button)
+        body.addLayout(avatar_row)
+        body.addWidget(Divider())
+
         row = QHBoxLayout()
         row.addWidget(QLabel("强调色"))
         self.accent_combo = QComboBox()
@@ -186,6 +211,7 @@ class SettingsPage(QWidget):
         self.accent_combo.currentIndexChanged.connect(self._on_accent_changed)
         self._ctx.playback.mode_changed.connect(self._sync_playback_modes)
         self._ctx.playback.volume_changed.connect(self._sync_volume)
+        self._ctx.avatar_changed.connect(self._sync_avatar)
 
     # ------------------------------------------------------------------ 刷新
     def refresh(self) -> None:
@@ -199,6 +225,7 @@ class SettingsPage(QWidget):
         self.restore_checkbox.blockSignals(False)
         self._sync_playback_modes()
         self._sync_accent()
+        self._sync_avatar()
         self._sync_library_tools()
         self._sync_data()
 
@@ -223,6 +250,23 @@ class SettingsPage(QWidget):
         index = self.accent_combo.findData(self._ctx.settings.accent)
         self.accent_combo.setCurrentIndex(index if index >= 0 else 0)
         self.accent_combo.blockSignals(False)
+        self.avatar_preview.set_accent(self._ctx.settings.accent)
+
+    def _sync_avatar(self) -> None:
+        configured = has_avatar()
+        self.avatar_preview.set_avatar(avatar_file() if configured else None)
+        self.avatar_remove_button.setEnabled(configured)
+        self.avatar_hint.setText(
+            "已设置自定义头像，点击头像可更换"
+            if configured
+            else "尚未设置头像，点击头像或「更换头像」选择图片"
+        )
+
+    def _choose_avatar(self) -> None:
+        choose_avatar(self, self._ctx)
+
+    def _clear_avatar(self) -> None:
+        clear_avatar(self, self._ctx)
 
     def _sync_library_tools(self) -> None:
         status = ffprobe.tool_status()
@@ -269,6 +313,7 @@ class SettingsPage(QWidget):
         if not color:
             return
         self._ctx.settings.accent = color
+        self.avatar_preview.set_accent(color)
         self._ctx.theme_changed.emit()
         self._ctx.toast("强调色已更新")
 

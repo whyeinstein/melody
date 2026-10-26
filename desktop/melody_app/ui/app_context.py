@@ -19,6 +19,7 @@ class AppContext(QObject):
     sources_changed = pyqtSignal()
     playlists_changed = pyqtSignal()
     favorite_changed = pyqtSignal(int, bool)  # song_id, favorite
+    avatar_changed = pyqtSignal()
     # 导航与反馈
     open_songs_requested = pyqtSignal(object)  # source_id | None
     navigate_requested = pyqtSignal(str)  # 页面 key

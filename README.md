@@ -14,6 +14,7 @@
 3. 在「歌曲」页双击歌曲播放；底部播放条控制上一首 / 播放暂停 / 下一首 / 进度 / 音量
 4. 「歌单」页新建歌单，在歌曲右键菜单里加入；「专辑」页按封面浏览
 5. 「播放」页查看大封面、播放队列、随机与循环模式；「设置」页调整音量、主题色与数据
+6. 点击左上角头像可换成本地图片；头像只是本机图片，不涉及账号或登录
 
 遇到问题可双击 `dev.cmd`（带控制台）查看报错，崩溃信息写入 `%APPDATA%\Melody\crash.log`。
 
@@ -29,6 +30,11 @@
 - **专辑**：封面墙 + 搜索；专辑详情（封面、艺术家、年份、曲目表、播放整张专辑）
 - **播放**：大封面与曲目信息、收藏、进度拖动、传输控制、随机/列表循环/单曲循环、音量、当前队列列表
 - **设置**：默认音量、启动恢复上次播放、默认播放模式与随机、强调色、ffmpeg 状态、缓存清理、版本信息
+
+**个性化**
+
+- 侧边栏头像框：点击更换图片（PNG/JPG/WebP/BMP/GIF），右键菜单或设置页可移除；
+  头像居中裁剪为 512px 内的 PNG 存到数据目录，**只是本机头像，不涉及账号 / 登录 / 用户管理**
 
 **播放与数据**
 
@@ -56,13 +62,14 @@ desktop/
       repositories/          songs / albums / playlists / sources / settings
       sources/               MusicSource 抽象 + local（已实现）+ webdav（连接测试已实现）
       credentials.py         Windows DPAPI 凭据存储
+      profile.py             本地头像图片处理（裁剪 / 保存 / 删除）
       library/               ffprobe 封装、扫描线程、LibraryService
       playback/              AudioEngine（QMediaPlayer + 转码）、PlayQueue、PlaybackController
     ui/
       app_context.py         页面与业务之间的唯一通道（信号 + 仓储）
       main_window.py         外壳：左侧导航 + 六页 QStackedWidget + 播放条
       navigation.py  theme.py  player_bar.py  song_actions.py
-      widgets/               SongTableView / CoverLabel / Card / PageHeader / EmptyState
+      widgets/               SongTableView / CoverLabel / AvatarButton / Card / PageHeader / EmptyState
       pages/                 songs / playlists / library / albums / player / settings
 tests_py/                    Python 自动化测试（unittest）
 docs/

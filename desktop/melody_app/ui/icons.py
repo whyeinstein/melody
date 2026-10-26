@@ -35,6 +35,7 @@ _PATHS: dict[str, str] = {
     "album": '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
     "info": '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.4"/>',
     "more": '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+    "user": '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
 }
 
 _cache: dict[tuple[str, str, int], QIcon] = {}

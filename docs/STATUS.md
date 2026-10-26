@@ -22,6 +22,7 @@
 - 左导航 + 六个一级页面：**歌曲 / 歌单 / 音乐库 / 专辑 / 播放 / 设置**
 - 底部常驻播放条（封面、曲名、进度、上一首/播放暂停/下一首、随机/顺序、音量、队列）
 - 深色主题 + 可切换强调色（`ui/theme.py`）
+- 侧边栏头像框：可自定义图片（点击更换 / 右键移除），仅本地图片，不做账号与用户管理
 
 ### 3.2 数据层（schema v2）
 
@@ -59,7 +60,7 @@
 
 ### 3.6 工程化
 
-- 测试：**44 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描、DPAPI 凭据、WebDAV 客户端与来源集成）
+- 测试：**50 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描、DPAPI 凭据、WebDAV 客户端与来源集成、头像裁剪与文件处理）
 - Electron 资产测试：62 个 TypeScript 测试全绿（保留但不再使用）
 - 打包：`scripts/build-exe.ps1` → `dist/Melody/Melody.exe`（onedir），**实测可启动并出图**；内置 ffmpeg/ffprobe 到 `_internal/`
 - 文档：`docs/architecture-redesign.md`、`docs/remote-library-interface.md`、`docs/screenshots/`（7 张页面截图）
@@ -103,7 +104,7 @@
 ## 7. 质量快照
 
 ```
-Python 测试   44 passed
+Python 测试   50 passed
 TypeScript    62 passed（Electron 资产）
 打包          dist/Melody/Melody.exe 可启动（v0.2.0）
 截图          docs/screenshots/*.png（7 张）

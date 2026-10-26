@@ -15,8 +15,10 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from ..config import APP_NAME, APP_TAGLINE, APP_VERSION
+from ..config import APP_NAME, APP_TAGLINE, APP_VERSION, avatar_file
+from ..core.profile import has_avatar
 from .app_context import AppContext
+from .avatar_actions import choose_avatar, clear_avatar
 from .icons import icon
 from .navigation import DEFAULT_PAGE, NAV_BY_KEY, NAV_ITEMS
 from .pages.albums_page import AlbumsPage
@@ -27,6 +29,7 @@ from .pages.settings_page import SettingsPage
 from .pages.songs_page import SongsPage
 from .player_bar import PlayerBar
 from .theme import DEFAULT_ACCENT, TEXT_DIM, TEXT_MUTED, build_stylesheet
+from .widgets.avatar import AvatarButton
 
 NAV_ICONS = {
     "songs": "music",
@@ -83,23 +86,19 @@ class MainWindow(QMainWindow):
 
         brand_row = QHBoxLayout()
         brand_row.setSpacing(10)
-        logo = QLabel()
-        logo.setFixedSize(32, 32)
-        logo.setAlignment(Qt.AlignCenter)
-        logo.setPixmap(icon("music", "#ffffff", 18).pixmap(18, 18))
-        logo.setStyleSheet(
-            f"background: {self._accent}; border-radius: 9px;"
-        )
-        self._logo = logo
+        self.avatar = AvatarButton(44)
+        self.avatar.clicked.connect(self._choose_avatar)
+        self.avatar.remove_requested.connect(self._remove_avatar)
+        self._refresh_avatar()
         brand_text = QVBoxLayout()
         brand_text.setSpacing(0)
         name = QLabel(APP_NAME)
         name.setObjectName("brandName")
-        tag = QLabel(APP_TAGLINE)
+        tag = QLabel(f"本地用户 · {APP_TAGLINE}")
         tag.setObjectName("brandTag")
         brand_text.addWidget(name)
         brand_text.addWidget(tag)
-        brand_row.addWidget(logo)
+        brand_row.addWidget(self.avatar)
         brand_row.addLayout(brand_text, 1)
         side_layout.addLayout(brand_row)
         side_layout.addSpacing(22)
@@ -181,6 +180,7 @@ class MainWindow(QMainWindow):
         self._ctx.theme_changed.connect(self._apply_theme)
         self._ctx.library_changed.connect(self._update_sidebar_counts)
         self._ctx.playlists_changed.connect(self._update_sidebar_counts)
+        self._ctx.avatar_changed.connect(self._refresh_avatar)
 
     # ------------------------------------------------------------------ 导航
     def navigate(self, key: str, refresh: bool = True) -> None:
@@ -212,14 +212,23 @@ class MainWindow(QMainWindow):
         page.refresh()
         page.set_source_filter(source_id)
 
+    # ------------------------------------------------------------------ 头像
+    def _choose_avatar(self) -> None:
+        choose_avatar(self, self._ctx)
+
+    def _remove_avatar(self) -> None:
+        clear_avatar(self, self._ctx)
+
+    def _refresh_avatar(self) -> None:
+        self.avatar.set_avatar(avatar_file() if has_avatar() else None)
+        self.avatar.set_accent(self._accent)
+
     # ------------------------------------------------------------------ 主题
     def _apply_theme(self) -> None:
         accent = self._ctx.settings.accent
         self._accent = accent
         self.setStyleSheet(build_stylesheet(accent))
-        self._logo.setStyleSheet(
-            f"background: {accent}; border-radius: 9px;"
-        )
+        self.avatar.set_accent(accent)
         for key, button in self._nav_buttons.items():
             checked = key == self._current_key
             color = accent if checked else TEXT_MUTED

@@ -43,6 +43,11 @@ def credentials_dir() -> str:
     return path
 
 
+def avatar_file() -> str:
+    """自定义头像的统一保存位置（PNG，居中裁剪后的方形图）。"""
+    return os.path.join(app_data_dir(), "avatar.png")
+
+
 AUDIO_EXTENSIONS = {
     ".mp3",
     ".flac",
