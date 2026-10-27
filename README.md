@@ -91,7 +91,14 @@ python -m unittest discover -s tests_py -v
 
 ## 打包（Windows，自带 ffmpeg）
 
-打包版不依赖用户安装 Python 或 ffmpeg，提供两种模式：
+先获取代码（已在本地仓库的话跳过）：
+
+```powershell
+git clone https://github.com/whyeinstein/melody.git
+cd melody
+```
+
+以下命令都在仓库根目录执行。打包版不依赖用户安装 Python 或 ffmpeg，提供两种模式：
 
 | 模式 | 命令 | 产物 | 说明 |
 | --- | --- | --- | --- |
@@ -100,15 +107,23 @@ python -m unittest discover -s tests_py -v
 
 步骤：
 
-1. 安装 PyInstaller：`pip install pyinstaller`（也可把解包目录传给脚本的 `-PyInstallerPath`）；
+1. 安装打包依赖（Python 3.10+）：
+   ```powershell
+   python -m pip install PyQt5 pyinstaller
+   ```
+   脚本会优先使用仓库里的 `.cache\pydeps`（开发用的解包目录），没有则使用当前 Python 已安装的 PyInstaller；
 2. 准备 ffmpeg 的 bin 目录（含 `ffmpeg.exe`、`ffprobe.exe`）：
-   默认读取 `MELODY_FFMPEG_DIR`，否则用 `D:\tool\ffmpeg-7.0.2-full_build\bin`，可用 `-FfmpegDir` 覆盖；
+   默认读取 `MELODY_FFMPEG_DIR`，否则用 `D:\tool\ffmpeg-7.0.2-full_build\bin`，可用 `-FfmpegDir` 覆盖，例如：
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\build-exe.ps1 -Mode onefile -FfmpegDir "D:\ffmpeg\bin"
+   ```
 3. 双击 `scripts\build-exe.cmd`（onedir）或 `scripts\build-onefile.cmd`（单文件）。
 
 程序查找 ffmpeg 的顺序：`MELODY_FFMPEG_DIR` → 打包目录（onefile 为解压目录）→ `vendor\ffmpeg\bin` → `%ProgramFiles%\ffmpeg\bin` → `PATH`。
 
 单文件版每次启动都要把约 400 MB 依赖解压到临时目录（PyInstaller 机制），启动会慢几秒；
 如果只是自己用，建议用 onedir 版。想减小体积可以换用更小的 ffmpeg 发行版（如 essentials build）。
+打包成功后 `dist\` 目录不进版本库，可以直接把 exe（onedir 则是整个文件夹）复制到任意位置运行。
 
 排查启动问题时可以用控制台调试版：
 

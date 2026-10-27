@@ -37,11 +37,25 @@ Copy-Item (Join-Path $FfmpegDir "ffmpeg.exe") $vendor -Force
 Copy-Item (Join-Path $FfmpegDir "ffprobe.exe") $vendor -Force
 
 Write-Host "[2/4] 准备 PyInstaller ..."
-$pyInstaller = Join-Path $root $PyInstallerPath
-if (-not (Test-Path $pyInstaller)) {
-    throw "找不到 PyInstaller：$pyInstaller。请先安装（pip install pyinstaller）或把 -PyInstallerPath 指向解包目录。"
+if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+    throw "未找到 python.exe。请先安装 Python 3.10+ 并加入 PATH。"
 }
-$env:PYTHONPATH = (Resolve-Path $pyInstaller).Path
+python -c "import PyQt5" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    throw "当前 Python 缺少 PyQt5。请运行：python -m pip install PyQt5"
+}
+
+$pyInstaller = Join-Path $root $PyInstallerPath
+if (Test-Path $pyInstaller) {
+    $env:PYTHONPATH = (Resolve-Path $pyInstaller).Path
+    Write-Host "  使用本地 PyInstaller 目录：$PyInstallerPath"
+} else {
+    python -c "import PyInstaller" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "未找到 PyInstaller。请先运行：python -m pip install pyinstaller（或用 -PyInstallerPath 指向解包目录）。"
+    }
+    Write-Host "  使用当前 Python 已安装的 PyInstaller"
+}
 
 if ($Mode -eq "onefile") {
     $env:MELODY_ONEFILE = "1"
