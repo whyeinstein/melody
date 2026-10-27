@@ -198,6 +198,26 @@ class PlaybackControllerTests(unittest.TestCase):
         self.engine.state_changed.emit("ended")
         self.assertEqual(self.controller.current_song.id, self.db_songs[0].id)
 
+    def test_auto_advance_switches_media_not_replay(self) -> None:
+        """回归：自动切歌必须换到下一首，不能把已经播完的上一首从头重放。"""
+        self.controller.play_songs(self.db_songs, 0)
+        self.engine.seeks.clear()
+        self.engine.state_changed.emit("ended")
+        self.assertEqual(self.controller.current_song.id, self.db_songs[1].id)
+        self.assertEqual(self.engine.played[-1], self.db_songs[1].path)
+        self.assertEqual(self.engine.seeks, [])
+
+    def test_repeat_one_replays_current_song(self) -> None:
+        """单曲循环：播完同一首时仍然从头重放，不推进队列。"""
+        self.controller.set_repeat(RepeatMode.ONE)
+        self.controller.play_songs(self.db_songs, 0)
+        self.engine.seeks.clear()
+        played_before = list(self.engine.played)
+        self.engine.state_changed.emit("ended")
+        self.assertEqual(self.controller.current_song.id, self.db_songs[0].id)
+        self.assertEqual(self.engine.seeks, [0])
+        self.assertEqual(self.engine.played, played_before)
+
     def test_ended_stops_when_repeat_off(self) -> None:
         self.controller.play_songs(self.db_songs, 2)
         self.engine.state_changed.emit("ended")

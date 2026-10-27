@@ -147,13 +147,17 @@ class PlaybackController(QObject):
         self.state_changed.emit("stopped")
 
     def next_track(self, manual: bool = True) -> None:
+        # 必须在推进队列前记下当前曲目：queue.next() 会同步发出 changed，
+        # 进而让 _on_queue_changed 把 _current_song 换成新曲目，
+        # 之后再用 _current_song 判断"是否同一首"就会永远成立。
+        current_id = self._current_song.id if self._current_song is not None else -1
         song = self._queue.next(auto=not manual)
         if song is None:
             if not manual:
                 self._state = "stopped"
                 self.state_changed.emit("stopped")
             return
-        if not manual and song.id == (self._current_song.id if self._current_song else -1):
+        if not manual and song.id == current_id:
             # 单曲循环：从头重放。
             self._engine.seek(0)
             self._engine.play()
