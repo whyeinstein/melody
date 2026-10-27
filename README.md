@@ -91,19 +91,24 @@ python -m unittest discover -s tests_py -v
 
 ## 打包（Windows，自带 ffmpeg）
 
-打包版不依赖用户安装 Python 或 ffmpeg：
+打包版不依赖用户安装 Python 或 ffmpeg，提供两种模式：
+
+| 模式 | 命令 | 产物 | 说明 |
+| --- | --- | --- | --- |
+| **onedir**（默认） | 双击 `scripts\build-exe.cmd`，或 `... build-exe.ps1` | `dist\Melody\Melody.exe` + `_internal\`（约 411 MB） | 启动快，适合日常使用 |
+| **onefile**（单文件） | 双击 `scripts\build-onefile.cmd`，或 `... build-exe.ps1 -Mode onefile` | 单个 `dist\Melody.exe`（约 165 MB） | 便于分发；每次启动需先解压到临时目录，会慢几秒 |
+
+步骤：
 
 1. 安装 PyInstaller：`pip install pyinstaller`（也可把解包目录传给脚本的 `-PyInstallerPath`）；
 2. 准备 ffmpeg 的 bin 目录（含 `ffmpeg.exe`、`ffprobe.exe`）：
    默认读取 `MELODY_FFMPEG_DIR`，否则用 `D:\tool\ffmpeg-7.0.2-full_build\bin`，可用 `-FfmpegDir` 覆盖；
-3. 双击 `scripts\build-exe.cmd`，或运行：
+3. 双击 `scripts\build-exe.cmd`（onedir）或 `scripts\build-onefile.cmd`（单文件）。
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-exe.ps1
-```
+程序查找 ffmpeg 的顺序：`MELODY_FFMPEG_DIR` → 打包目录（onefile 为解压目录）→ `vendor\ffmpeg\bin` → `%ProgramFiles%\ffmpeg\bin` → `PATH`。
 
-输出 `dist\Melody\Melody.exe`（onedir，随包附带 ffmpeg/ffprobe，目录约 410 MB）。
-程序查找 ffmpeg 的顺序：`MELODY_FFMPEG_DIR` → 打包目录 → `vendor\ffmpeg\bin` → `%ProgramFiles%\ffmpeg\bin` → `PATH`。
+单文件版每次启动都要把约 400 MB 依赖解压到临时目录（PyInstaller 机制），启动会慢几秒；
+如果只是自己用，建议用 onedir 版。想减小体积可以换用更小的 ffmpeg 发行版（如 essentials build）。
 
 排查启动问题时可以用控制台调试版：
 

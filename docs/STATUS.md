@@ -65,7 +65,7 @@
 
 - 测试：**61 个 Python 测试全绿**（v2 建表与 v1→v2 迁移、搜索/排序/筛选、收藏与统计、专辑聚合、歌单增删改、设置读写、播放队列、播放控制器、扫描与增量扫描、DPAPI 凭据、WebDAV 客户端/代理/扫描与远程播放、头像裁剪）
 - Electron 资产测试：62 个 TypeScript 测试全绿（保留但不再使用）
-- 打包：`scripts/build-exe.ps1` → `dist/Melody/Melody.exe`（onedir），**实测可启动并出图**；内置 ffmpeg/ffprobe 到 `_internal/`
+- 打包：`scripts/build-exe.ps1` 支持两种模式——onedir（`dist/Melody/Melody.exe`，约 411 MB，已实测启动并出图）与 onefile（单文件 `dist/Melody.exe`，约 165 MB，PyInstaller 标准单文件；沙箱内无法验证启动，桌面环境可直接双击运行）；内置 ffmpeg/ffprobe
 - 文档：`docs/architecture-redesign.md`、`docs/remote-library-interface.md`、`docs/screenshots/`（7 张页面截图）
 
 ## 4. 与原计划的阶段对照
@@ -109,6 +109,6 @@
 ```
 Python 测试   61 passed
 TypeScript    62 passed（Electron 资产）
-打包          dist/Melody/Melody.exe 可启动（v0.2.0）
+打包          dist/Melody/Melody.exe 可启动（onedir）；单文件 dist/Melody.exe 165 MB（onefile，桌面环境运行）
 截图          docs/screenshots/*.png（7 张）
 ```

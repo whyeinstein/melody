@@ -60,3 +60,12 @@ Electron 的浏览器进程需要完整的令牌与桌面环境。在本仓库�
 conda env create -f scripts/env/environment.yml
 conda activate melody
 ```
+
+## 6. PyInstaller onefile 无法在受限沙箱里启动
+
+onefile 版 exe 启动时要把依赖解压到临时目录。DSH 的文件沙箱会拒绝该解压目录写入
+（`Access denied`，即使把 `TMP` 指到工作区也一样），所以在本会话里只能**构建** onefile、
+不能启动验证；请在普通桌面（资源管理器/终端双击）测试。
+
+- onedir 版（`dist\Melody\Melody.exe` + `_internal\`）不受影响，可在沙箱内直接运行验证；
+- 单文件版建议在用户自己的桌面环境验证：`dist\Melody.exe` 双击启动，首次会慢几秒（解压）。

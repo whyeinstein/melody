@@ -1,12 +1,19 @@
 ﻿<#
 .SYNOPSIS
-    打包 Melody 为 Windows 可执行程序（onedir，内置 ffmpeg/ffprobe）。
+    打包 Melody 为 Windows 可执行程序（内置 ffmpeg/ffprobe）。
+
+.DESCRIPTION
+    -Mode onedir  ：默认，输出 dist\Melody\ 目录（启动快，适合日常使用）
+    -Mode onefile ：输出单个 dist\Melody.exe（便于分发；每次启动会先解压到临时目录，稍慢）
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\build-exe.ps1
+    powershell -ExecutionPolicy Bypass -File scripts\build-exe.ps1 -Mode onefile
     powershell -ExecutionPolicy Bypass -File scripts\build-exe.ps1 -FfmpegDir "D:\ffmpeg\bin"
 #>
 param(
+    [ValidateSet("onedir", "onefile")]
+    [string]$Mode = "onedir",
     [string]$FfmpegDir = $env:MELODY_FFMPEG_DIR,
     [string]$PyInstallerPath = ".cache\pydeps"
 )
@@ -36,19 +43,37 @@ if (-not (Test-Path $pyInstaller)) {
 }
 $env:PYTHONPATH = (Resolve-Path $pyInstaller).Path
 
-Write-Host "[3/4] 运行 PyInstaller ..."
+if ($Mode -eq "onefile") {
+    $env:MELODY_ONEFILE = "1"
+    $work = ".cache\pyinstaller-build-onefile"
+} else {
+    $env:MELODY_ONEFILE = "0"
+    $work = ".cache\pyinstaller-build"
+}
+
+Write-Host "[3/4] 运行 PyInstaller（Mode=$Mode）..."
 python -m PyInstaller packaging\melody.spec --noconfirm --clean `
-    --distpath "dist" --workpath ".cache\pyinstaller-build"
+    --distpath "dist" --workpath $work
 if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller 失败（exit=$LASTEXITCODE）"
 }
 
 Write-Host "[4/4] 完成"
-$exe = Join-Path $root "dist\Melody\Melody.exe"
-if (Test-Path $exe) {
-    $size = [math]::Round(((Get-ChildItem (Join-Path $root "dist\Melody") -Recurse |
-        Measure-Object Length -Sum).Sum / 1MB), 1)
-    Write-Host "输出：$exe（目录约 $size MB）"
+if ($Mode -eq "onefile") {
+    $exe = Join-Path $root "dist\Melody.exe"
+    if (Test-Path $exe) {
+        $size = [math]::Round(((Get-Item $exe).Length / 1MB), 1)
+        Write-Host "输出：$exe（单文件约 $size MB；首次启动需解压到临时目录，会慢几秒）"
+    } else {
+        throw "未找到输出文件 $exe"
+    }
 } else {
-    throw "未找到输出文件 $exe"
+    $exe = Join-Path $root "dist\Melody\Melody.exe"
+    if (Test-Path $exe) {
+        $size = [math]::Round(((Get-ChildItem (Join-Path $root "dist\Melody") -Recurse |
+            Measure-Object Length -Sum).Sum / 1MB), 1)
+        Write-Host "输出：$exe（目录约 $size MB）"
+    } else {
+        throw "未找到输出文件 $exe"
+    }
 }
